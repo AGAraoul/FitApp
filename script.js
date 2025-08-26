@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentStep = 0;
     const userData = {};
 
-    // --- NEU: Fragen in Schritten gruppiert ---
+    // --- Fragen in Schritten gruppiert ---
     const registrationSteps = [
         {
             title: "Erstelle dein Konto",
@@ -91,29 +91,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (pages[pageName]) pages[pageName].style.display = 'block';
     };
 
-    const renderStep = (direction = 'forward') => {
-        const oldStepElement = formStepsContainer.querySelector('.form-step.active');
-        const newStepElement = formStepsContainer.children[currentStep];
-
-        if (oldStepElement) {
-            oldStepElement.classList.remove('active');
-            oldStepElement.classList.add(direction === 'forward' ? 'slide-out-left' : 'slide-out-right');
-        }
-        
-        newStepElement.classList.remove('slide-in-left', 'slide-in-right', 'inactive');
-        newStepElement.classList.add('active');
-        
-        updateProgressBar();
-        updateNavButtons();
-    };
-
     const buildFormSteps = () => {
         formStepsContainer.innerHTML = '';
-        registrationSteps.forEach((step, index) => {
+        registrationSteps.forEach((step) => {
             const stepElement = document.createElement('div');
             stepElement.classList.add('form-step', 'space-y-6');
-            if (index !== 0) stepElement.classList.add('inactive', 'slide-in-right');
-            else stepElement.classList.add('active');
 
             let stepHtml = `<h2 class="text-2xl font-bold text-center">${step.title}</h2>`;
             step.questions.forEach(q => {
@@ -130,6 +112,21 @@ document.addEventListener('DOMContentLoaded', () => {
             stepElement.innerHTML = stepHtml;
             formStepsContainer.appendChild(stepElement);
         });
+    };
+
+    const renderStep = () => {
+        formStepsContainer.childNodes.forEach((step, index) => {
+            step.classList.remove('active', 'prev', 'next');
+            if (index === currentStep) {
+                step.classList.add('active');
+            } else if (index < currentStep) {
+                step.classList.add('prev');
+            } else {
+                step.classList.add('next');
+            }
+        });
+        updateProgressBar();
+        updateNavButtons();
     };
 
     const updateProgressBar = () => {
@@ -167,7 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const saveStepData = () => {
         registrationSteps[currentStep].questions.forEach(q => {
-            if (q.id === 'passwordConfirm') return; // Don't save password confirmation
+            if (q.id === 'passwordConfirm') return;
             if (q.type === 'multiselect_days') {
                 const checkedDays = Array.from(document.querySelectorAll(`input[name="sportDays"]:checked`)).map(cb => cb.value);
                 userData[q.id] = checkedDays.length > 0 ? checkedDays.join(', ') : 'Keine';
@@ -271,7 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
         saveStepData();
         if (currentStep < registrationSteps.length - 1) {
             currentStep++;
-            renderStep('forward');
+            renderStep();
         } else {
             handleRegistration();
         }
@@ -279,17 +276,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     prevBtn.addEventListener('click', () => {
         if (currentStep > 0) {
-            const oldStepElement = formStepsContainer.querySelector('.form-step.active');
-            oldStepElement.classList.add('slide-out-right');
-            oldStepElement.classList.remove('active');
-
             currentStep--;
-            const newStepElement = formStepsContainer.children[currentStep];
-            newStepElement.classList.remove('inactive', 'slide-in-left');
-            newStepElement.classList.add('active');
-            
-            updateProgressBar();
-            updateNavButtons();
+            renderStep();
         }
     });
 

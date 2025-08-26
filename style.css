@@ -63,35 +63,33 @@ body {
     to { transform: rotate(360deg); }
 }
 
-/* --- NEU: Stile für Multi-Step Formular --- */
+/* --- ÜBERARBEITET: Stile für Multi-Step Formular --- */
+#form-steps {
+    position: relative;
+    min-height: 380px; /* Verhindert das Kollabieren während der Animation */
+}
 .form-step {
     width: 100%;
     transition: transform 0.4s ease-in-out, opacity 0.4s ease-in-out;
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    pointer-events: none;
 }
 .form-step.active {
     transform: translateX(0);
     opacity: 1;
-    position: relative;
-    z-index: 1;
+    position: relative; /* Nur der aktive Schritt nimmt Platz ein */
+    pointer-events: auto;
 }
-.form-step.inactive {
+.form-step.prev {
+    transform: translateX(-100%);
     opacity: 0;
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 0;
 }
-.form-step.slide-out-left {
-    transform: translateX(-100%);
-}
-.form-step.slide-in-right {
+.form-step.next {
     transform: translateX(100%);
-}
-.form-step.slide-out-right {
-    transform: translateX(100%);
-}
-.form-step.slide-in-left {
-    transform: translateX(-100%);
+    opacity: 0;
 }
 
 /* Wochenplan */
