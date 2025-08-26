@@ -1,13 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- HIER DEINE FIREBASE KONFIGURATION EINFÜGEN ---
     const firebaseConfig = {
-        apiKey: "AIzaSyA12D2TLiR3E6I4gXZlD2IxT9h2nQPgJKs",
-        authDomain: "DEIN_AUTH_DOMAIN",
-        projectId: "DEIN_PROJECT_ID",
-        storageBucket: "DEIN_STORAGE_BUCKET",
-        messagingSenderId: "DEIN_MESSAGING_SENDER_ID",
-        appId: "DEIN_APP_ID"
-    };
+  apiKey: "AIzaSyBb0nvgFpiWaOyiiQtU6wFTd5cA4o4NBSk",
+  authDomain: "befit-personaltrainer.firebaseapp.com",
+  projectId: "befit-personaltrainer",
+  storageBucket: "befit-personaltrainer.firebasestorage.app",
+  messagingSenderId: "1075828940079",
+  appId: "1:1075828940079:web:afb36b6e45217482aa55da",
+  measurementId: "G-B5SS4JMZEH"
+};
 
     // Firebase initialisieren
     firebase.initializeApp(firebaseConfig);
