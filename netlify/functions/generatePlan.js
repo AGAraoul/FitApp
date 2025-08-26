@@ -13,7 +13,7 @@ const db = admin.firestore();
 // --- PROMPT-ERSTELLUNG ---
 const createPrompt = (userProfile) => {
     return `
-        Erstelle einen detaillierten, personalisierten Trainingsplan und berechne den täglichen Kalorienbedarf.
+        Erstelle einen detaillierten, personalisierten Trainingsplan und berechne den täglichen Kalorienbedarf mit genauer Rücksicht auf die angegebenen Daten des Nutzers.
         Die Ausgabe MUSS ein valides JSON-Objekt sein, das genau dieser Struktur folgt: {"calories": "ca. XXXX kcal", "weeklyPlan": [...]}.
         "weeklyPlan" MUSS ein Array mit genau 7 Objekten sein, eines für jeden Tag von Montag bis Sonntag.
         Jedes Tagesobjekt MUSS diese Struktur haben: {"day": "TAG_NAME", "workoutTitle": "TITEL", "workoutDetails": "HTML_DETAILS"}.
