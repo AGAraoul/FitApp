@@ -3,6 +3,7 @@ body {
     font-family: 'Inter', sans-serif;
     background-color: #111827; /* Dunkelgrauer Hintergrund */
     color: #F9FAFB; /* Heller Text */
+    overflow: hidden; /* Verhindert Scrollen bei Vollbild-Layouts */
 }
 .card {
     background-color: #1F2937; /* Etwas helleres Grau für Karten */
@@ -92,48 +93,148 @@ body {
     opacity: 0;
 }
 
-/* --- NEU: Stile für Vollbild-Dashboard --- */
+/* --- ÜBERARBEITET: Stile für Vollbild-Dashboard & modernes Design --- */
 #app {
     width: 100%;
 }
-#dashboardPage {
+.dashboard-background {
     width: 100%;
-    height: 100vh; /* Füllt die gesamte Bildschirmhöhe */
-    padding: 1.5rem;
+    height: 100vh;
+    background: linear-gradient(135deg, #111827 0%, #172033 100%);
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
-.dashboard-card {
+.dashboard-container {
     width: 100%;
     height: 100%;
+    max-width: 1400px;
+    margin: auto;
     display: flex;
     flex-direction: column;
 }
-#planResult {
-    flex-grow: 1; /* Lässt den Plan-Container den restlichen Platz füllen */
+.dashboard-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #374151;
+    animation: slide-in-down 0.6s ease-out;
+    gap: 1rem;
 }
-
-/* Wochenplan */
-.day-cell {
-    background-color: #374151;
+@keyframes slide-in-down {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.user-greeting h2 { line-height: 1.2; }
+.user-actions { display: flex; align-items: center; gap: 1rem; }
+.stat-card {
+    background-color: rgba(31, 41, 55, 0.5);
+    border: 1px solid #374151;
     border-radius: 0.75rem;
-    padding: 1rem;
-    min-height: 120px;
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+.stat-icon {
+    background-color: rgba(22, 163, 74, 0.2);
+    color: #4ADE80;
+    border-radius: 50%;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.btn-secondary, .btn-danger {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    padding: 0.65rem 1.25rem;
+    border-radius: 0.5rem;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+.btn-secondary {
+    background-color: #374151;
+    color: #D1D5DB;
+    border-color: #4B5563;
+}
+.btn-secondary:hover { background-color: #4B5563; border-color: #6B7280; }
+.btn-danger {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #F87171;
+    border-color: rgba(239, 68, 68, 0.3);
+}
+.btn-danger:hover { background-color: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.5); }
+.plan-grid {
+    flex-grow: 1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1.5rem;
+    padding-top: 1.5rem;
+}
+.day-cell {
+    background: linear-gradient(145deg, #2c3647, #1e2633);
+    border-radius: 1rem;
+    padding: 1.25rem;
+    min-height: 150px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    border: 1px solid #374151;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fade-in-up 0.5s ease-out forwards;
+}
+@keyframes fade-in-up {
+    to { opacity: 1; transform: translateY(0); }
 }
 .day-cell.workout {
     cursor: pointer;
-    border: 2px solid #3B82F6;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-color: transparent;
+    position: relative;
+    overflow: hidden;
+}
+.day-cell.workout::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.3), transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 .day-cell.workout:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.2);
+    transform: translateY(-8px) scale(1.03);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
 }
+.day-cell.workout:hover::before { opacity: 1; }
 .day-cell.rest {
-    background-color: #1F2937;
-    border: 2px dashed #4B5563;
+    background: transparent;
+    border: 2px dashed #374151;
+    box-shadow: none;
 }
+.day-cell .day-name {
+    font-weight: 700;
+    font-size: 1.125rem;
+    color: white;
+}
+.day-cell .workout-title {
+    font-weight: 500;
+    color: #60A5FA;
+}
+.day-cell .view-details {
+    font-size: 0.75rem;
+    color: #9CA3AF;
+    align-self: flex-end;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.day-cell.workout:hover .view-details { opacity: 1; }
 
 /* Modal */
 .modal-overlay {
@@ -164,9 +265,7 @@ body {
     opacity: 1;
     visibility: visible;
 }
-.modal-overlay.open .modal-container {
-    transform: scale(1);
-}
+.modal-overlay.open .modal-container { transform: scale(1); }
 
 /* Tagesauswahl */
 .day-checkbox-label {

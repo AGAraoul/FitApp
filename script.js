@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- HIER DEINE FIREBASE KONFIGURATION EINFÜGEN ---
-   const firebaseConfig = {
+    const firebaseConfig = {
     apiKey: "AIzaSyBb0nvgFpiWaOyiiQtU6wFTd5cA4o4NBSk",
     authDomain: "befit-personaltrainer.firebaseapp.com",
     projectId: "befit-personaltrainer",
@@ -231,12 +231,19 @@ document.addEventListener('DOMContentLoaded', () => {
         planResultContainer.innerHTML = ''; 
         if (data.weeklyPlan && data.weeklyPlan.length === 7) {
             calorieCard.classList.remove('hidden'); 
-            data.weeklyPlan.forEach(dayPlan => {
+            data.weeklyPlan.forEach((dayPlan, index) => {
                 const isWorkout = dayPlan.workoutTitle.toLowerCase() !== 'ruhetag';
                 const cellClass = isWorkout ? 'workout' : 'rest';
                 const dayElement = document.createElement('div');
                 dayElement.className = `day-cell ${cellClass}`;
-                dayElement.innerHTML = `<div><p class="font-bold text-lg">${dayPlan.day}</p><p class="text-blue-300">${dayPlan.workoutTitle}</p></div>${isWorkout ? '<p class="text-xs text-gray-400 self-end">Details ansehen &rarr;</p>' : ''}`;
+                dayElement.style.animationDelay = `${index * 100}ms`; // Animation
+                dayElement.innerHTML = `
+                    <div>
+                        <p class="day-name">${dayPlan.day}</p>
+                        <p class="workout-title">${dayPlan.workoutTitle}</p>
+                    </div>
+                    ${isWorkout ? '<p class="view-details">Details &rarr;</p>' : ''}
+                `;
                 if (isWorkout) {
                     dayElement.dataset.title = `${dayPlan.day}: ${dayPlan.workoutTitle}`;
                     dayElement.dataset.details = dayPlan.workoutDetails;
