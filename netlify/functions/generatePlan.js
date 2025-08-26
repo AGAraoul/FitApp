@@ -1,20 +1,16 @@
 const fetch = require('node-fetch');
-// Firebase Admin SDK für die sichere Server-Kommunikation
 const admin = require('firebase-admin');
 
 // --- FIREBASE ADMIN SDK INITIALISIERUNG ---
-// Hole die Service-Account-Daten aus der Netlify Environment Variable
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
-
-// Initialisiere die Admin-App, falls noch nicht geschehen
 if (!admin.apps.length) {
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
     admin.initializeApp({
         credential: admin.credential.cert(serviceAccount)
     });
 }
 const db = admin.firestore();
 
-// --- PROMPT-ERSTELLUNG (ausgelagert für Sauberkeit) ---
+// --- PROMPT-ERSTELLUNG ---
 const createPrompt = (userProfile) => {
     return `
         Erstelle einen detaillierten, personalisierten Trainingsplan und berechne den täglichen Kalorienbedarf.
@@ -50,20 +46,24 @@ exports.handler = async (event, context) => {
     }
 
     try {
-        // 1. Authentifizierung prüfen
+        // 1. Nutzer authentifizieren
         const idToken = event.headers.authorization?.split('Bearer ')[1];
-        if (!idToken) {
-            return { statusCode: 401, body: JSON.stringify({ error: 'Kein Token bereitgestellt.' }) };
-        }
+        if (!idToken) throw new Error('Kein Token bereitgestellt.');
         const decodedToken = await admin.auth().verifyIdToken(idToken);
         const uid = decodedToken.uid;
+        const userDocRef = db.collection('users').doc(uid);
 
-        // 2. Daten aus dem Request holen
-        const { userProfile } = JSON.parse(event.body);
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) throw new Error('GEMINI_API_KEY ist nicht konfiguriert.');
+        // 2. Nutzerprofil aus Firestore lesen
+        const doc = await userDocRef.get();
+        if (!doc.exists || !doc.data().profile) {
+            throw new Error("Benutzerprofil nicht in der Datenbank gefunden.");
+        }
+        const userProfile = doc.data().profile;
 
         // 3. Plan mit Gemini API generieren
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) throw new Error('GEMINI_API_KEY ist nicht konfiguriert.');
+        
         const prompt = createPrompt(userProfile);
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
         const payload = {
@@ -86,18 +86,15 @@ exports.handler = async (event, context) => {
         const rawJson = result.candidates[0].content.parts[0].text;
         const planData = JSON.parse(rawJson);
 
-        // 4. Generierten Plan in Firestore speichern
-        const userDocRef = db.collection('users').doc(uid);
-        await userDocRef.set({
-            profile: userProfile,
-            plan: planData,
-            createdAt: admin.firestore.FieldValue.serverTimestamp()
+        // 4. Generierten Plan in das Dokument des Nutzers schreiben
+        await userDocRef.update({
+            plan: planData
         });
 
-        // 5. Plan an das Frontend zurücksenden
+        // 5. Erfolgsmeldung zurücksenden
         return {
             statusCode: 200,
-            body: JSON.stringify(planData)
+            body: JSON.stringify({ success: true, message: "Plan erfolgreich erstellt und gespeichert." })
         };
 
     } catch (error) {

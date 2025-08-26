@@ -34,9 +34,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalTitle = document.getElementById('modalTitle');
     const modalContent = document.getElementById('modalContent');
     const closeModalBtn = document.getElementById('closeModalBtn');
-    
+
     // --- Anwendungsstatus ---
-    let isRegistering = false; // NEUE FLAG, um den Registrierungsprozess zu verfolgen
+    let planListener = null; // Hält unseren Echtzeit-Listener
 
     // --- Fragen für Registrierung ---
     const questions = [
@@ -86,7 +86,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const handleRegistration = async (e) => {
         e.preventDefault();
-        isRegistering = true; // KORREKTUR: Flag am Anfang setzen
         const userData = {};
         
         questions.forEach(q => {
@@ -101,37 +100,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const { email, password, ...userProfile } = userData;
 
         try {
-            showPage('planCreationLoading');
+            showPage('planCreationLoading'); // Zeige Lade-Animation
             const userCredential = await auth.createUserWithEmailAndPassword(email, password);
             const user = userCredential.user;
-            const idToken = await user.getIdToken(true);
 
-            const response = await fetch('/.netlify/functions/generatePlan', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${idToken}`
-                },
-                body: JSON.stringify({ userProfile })
+            // Speichere das Profil direkt in Firestore. Das ist schnell und wird nicht timouten.
+            await db.collection('users').doc(user.uid).set({
+                profile: userProfile,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Fehler beim Generieren des Plans.');
-            }
-
-            const planData = await response.json();
-
-            document.getElementById('userEmailDisplay').textContent = user.email;
-            displayResults(planData);
-            showPage('dashboard');
+            
+            // Der onAuthStateChanged Listener wird automatisch den Rest übernehmen,
+            // da der Nutzer jetzt eingeloggt ist und ein Profil (aber noch keinen Plan) hat.
 
         } catch (error) {
             console.error("Registrierungsfehler:", error);
             alert(`Fehler: ${error.message}`);
             showPage('registration'); 
-        } finally {
-            isRegistering = false; // KORREKTUR: Flag am Ende immer zurücksetzen
         }
     };
 
@@ -186,24 +171,48 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     const closeModal = () => detailsModal.classList.remove('open');
 
-    // --- Event Listener ---
-    auth.onAuthStateChanged(async user => {
-        // KORREKTUR: Listener pausieren, während die Registrierung läuft
-        if (isRegistering) {
-            return;
-        }
+    // --- KORRIGIERTER Event Listener ---
+    auth.onAuthStateChanged(user => {
+        // Wenn ein alter Listener läuft, stoppe ihn, bevor ein neuer gestartet wird.
+        if (planListener) planListener();
 
         if (user) {
-            const userDoc = await db.collection('users').doc(user.uid).get();
-            if (userDoc.exists) {
-                const userData = userDoc.data();
+            const userDocRef = db.collection('users').doc(user.uid);
+
+            // Starte einen Echtzeit-Listener für das Dokument des Nutzers
+            planListener = userDocRef.onSnapshot(async (doc) => {
                 document.getElementById('userEmailDisplay').textContent = user.email;
-                displayResults(userData.plan);
-                showPage('dashboard');
-            } else {
-                showPage('registration');
-            }
+
+                if (doc.exists) {
+                    const userData = doc.data();
+                    
+                    if (userData.plan) {
+                        // FALL 1: Der Plan existiert -> Anzeigen!
+                        displayResults(userData.plan);
+                        showPage('dashboard');
+                    } else if (userData.profile) {
+                        // FALL 2: Profil existiert, aber kein Plan -> Generieren!
+                        showPage('dashboard');
+                        planResultContainer.innerHTML = `<div class="col-span-full flex flex-col items-center justify-center p-8"><div class="loader mb-4"></div><p class="text-lg font-semibold">Dein persönlicher Plan wird generiert...</p><p class="text-gray-400">Das kann bis zu 30 Sekunden dauern.</p></div>`;
+                        
+                        // Rufe die Funktion auf, die den Plan im Hintergrund erstellt.
+                        // Wir müssen nicht auf die Antwort warten, der Listener fängt die Änderung ab.
+                        const idToken = await user.getIdToken(true);
+                        fetch('/.netlify/functions/generatePlan', {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${idToken}` }
+                        }).catch(err => console.error("Fehler beim Aufrufen der generatePlan Funktion:", err));
+                    }
+                } else {
+                    // FALL 3: Nutzer ist eingeloggt, aber hat kein Profil in der DB -> zur Registrierung
+                    showPage('registration');
+                }
+            }, (error) => {
+                console.error("Fehler beim Abhören der Datenbank:", error);
+                showPage('login');
+            });
         } else {
+            // User ist nicht eingeloggt
             showPage('registration');
         }
     });
