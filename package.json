@@ -1,6 +1,6 @@
 {
   "name": "fitfusion-app",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "KI Fitness Coach",
   "main": "index.html",
   "scripts": {
@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "firebase-admin": "^11.5.0",
     "node-fetch": "^2.6.7"
   }
 }

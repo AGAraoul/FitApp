@@ -1,63 +1,76 @@
-// Wichtig: Du musst 'node-fetch' installieren, damit dies funktioniert.
-// Führe im Terminal deines Projekts 'npm install node-fetch' aus.
 const fetch = require('node-fetch');
+// Firebase Admin SDK für die sichere Server-Kommunikation
+const admin = require('firebase-admin');
 
-// Die Handler-Funktion ist der Einstiegspunkt für die Netlify Function.
+// --- FIREBASE ADMIN SDK INITIALISIERUNG ---
+// Hole die Service-Account-Daten aus der Netlify Environment Variable
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+
+// Initialisiere die Admin-App, falls noch nicht geschehen
+if (!admin.apps.length) {
+    admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount)
+    });
+}
+const db = admin.firestore();
+
+// --- PROMPT-ERSTELLUNG (ausgelagert für Sauberkeit) ---
+const createPrompt = (userProfile) => {
+    return `
+        Erstelle einen detaillierten, personalisierten Trainingsplan und berechne den täglichen Kalorienbedarf.
+        Die Ausgabe MUSS ein valides JSON-Objekt sein, das genau dieser Struktur folgt: {"calories": "ca. XXXX kcal", "weeklyPlan": [...]}.
+        "weeklyPlan" MUSS ein Array mit genau 7 Objekten sein, eines für jeden Tag von Montag bis Sonntag.
+        Jedes Tagesobjekt MUSS diese Struktur haben: {"day": "TAG_NAME", "workoutTitle": "TITEL", "workoutDetails": "HTML_DETAILS"}.
+        
+        **Benutzerdaten:**
+        - Geschlecht: ${userProfile.gender}
+        - Alter: ${userProfile.age} Jahre
+        - Größe: ${userProfile.height} cm
+        - Gewicht: ${userProfile.weight} kg
+        - Ziel: ${userProfile.goal}
+        - Hauptsportart: ${userProfile.sport}
+        - Bestehende Trainingstage: ${userProfile.sportDays}
+        - Fitnessniveau: ${userProfile.fitnessLevel}
+        - Gewünschte zusätzliche Trainingseinheiten: ${userProfile.frequency}
+
+        **KRITISCHE ANWEISUNGEN:**
+        1.  **Feste Termine:** Die Tage unter "Bestehende Trainingstage" sind FIXE Termine. Trage diese exakt an den angegebenen Tagen in den Plan ein.
+        2.  **KI-Häufigkeit:** Wenn "Gewünschte zusätzliche Trainingseinheiten" "KI-Empfehlung" ist, bestimme DU die optimale Anzahl.
+        3.  **Intelligente Platzierung:** Plane die zusätzlichen Workouts und Ruhetage intelligent UM die festen Termine herum.
+        4.  **Anpassung an Niveau:** Passe die Komplexität der Übungen an das Fitnessniveau an.
+
+        Gib NUR das JSON-Objekt zurück, ohne zusätzlichen Text oder Markdown.
+    `;
+};
+
+// --- NETLIFY FUNCTION HANDLER ---
 exports.handler = async (event, context) => {
-    // Erlaube nur POST-Anfragen
     if (event.httpMethod !== 'POST') {
         return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
     }
 
     try {
-        // Hole die Benutzerdaten aus dem Request-Body
-        const { userProfile } = JSON.parse(event.body);
-        
-        // Hole den API-Key sicher aus den Netlify Environment Variables
-        const apiKey = process.env.GEMINI_API_KEY;
-
-        if (!apiKey) {
-            throw new Error('API-Key ist nicht konfiguriert.');
+        // 1. Authentifizierung prüfen
+        const idToken = event.headers.authorization?.split('Bearer ')[1];
+        if (!idToken) {
+            return { statusCode: 401, body: JSON.stringify({ error: 'Kein Token bereitgestellt.' }) };
         }
+        const decodedToken = await admin.auth().verifyIdToken(idToken);
+        const uid = decodedToken.uid;
 
-        // Erstelle den Prompt hier auf dem Server, basierend auf den empfangenen Daten
-        const prompt = `
-            Erstelle einen detaillierten, personalisierten Trainingsplan und berechne den täglichen Kalorienbedarf.
-            Die Ausgabe MUSS ein valides JSON-Objekt sein, das genau dieser Struktur folgt: {"calories": "ca. XXXX kcal", "weeklyPlan": [...]}.
-            "weeklyPlan" MUSS ein Array mit genau 7 Objekten sein, eines für jeden Tag von Montag bis Sonntag.
-            Jedes Tagesobjekt MUSS diese Struktur haben: {"day": "TAG_NAME", "workoutTitle": "TITEL", "workoutDetails": "HTML_DETAILS"}.
-            - "workoutTitle": Kurzer Titel (z.B. "Krafttraining: Oberkörper", "Fußballtraining", "Aktive Erholung", "Ruhetag").
-            - "workoutDetails": Gut formatierter HTML-String mit den Details.
+        // 2. Daten aus dem Request holen
+        const { userProfile } = JSON.parse(event.body);
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) throw new Error('GEMINI_API_KEY ist nicht konfiguriert.');
 
-            **Benutzerdaten:**
-            - Geschlecht: ${userProfile.gender}
-            - Alter: ${userProfile.age} Jahre
-            - Größe: ${userProfile.height} cm
-            - Gewicht: ${userProfile.weight} kg
-            - Ziel: ${userProfile.goal}
-            - Hauptsportart: ${userProfile.sport}
-            - Bestehende Trainingstage (Hauptsportart): ${userProfile.sportDays}
-            - Fitnessniveau: ${userProfile.fitnessLevel}
-            - Gewünschte zusätzliche Trainingseinheiten im Fitnessstudio: ${userProfile.frequency}
-
-            **KRITISCHE ANWEISUNGEN FÜR DIE PLANUNG:**
-            1.  **Feste Termine:** Die Tage unter "Bestehende Trainingstage" sind FIXE Termine für die Hauptsportart. Trage diese exakt an den angegebenen Tagen in den Plan ein (z.B. bei "Dienstag, Donnerstag" -> "workoutTitle": "${userProfile.sport} Training" an diesen Tagen).
-            2.  **KI-Häufigkeit:** Wenn bei "Gewünschte zusätzliche Trainingseinheiten" der Wert "KI-Empfehlung" steht, bestimme DU die optimale Anzahl an zusätzlichen Trainingstagen (1 bis 4), basierend auf allen anderen Daten. Ansonsten nutze die vom Benutzer gewählte Anzahl.
-            3.  **Intelligente Platzierung:** Plane die zusätzlichen Fitnessstudio-Workouts und die notwendigen Ruhetage intelligent UM die festen Termine herum. Vermeide es, schwere Krafteinheiten direkt vor oder nach intensiven Trainingstagen der Hauptsportart zu legen.
-            4.  **Anpassung an Niveau:** Passe die Komplexität und das Volumen der Übungen im "workoutDetails" an das angegebene Fitnessniveau an.
-            5.  **Kalorien:** Passe den Kalorienbedarf an das Ziel an.
-
-            Gib NUR das JSON-Objekt zurück, ohne zusätzlichen Text, Erklärungen oder Markdown-Formatierung.
-        `;
-        
+        // 3. Plan mit Gemini API generieren
+        const prompt = createPrompt(userProfile);
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-
         const payload = {
             contents: [{ role: "user", parts: [{ text: prompt }] }],
             generationConfig: { responseMimeType: "application/json" }
         };
-
-        // Rufe die externe Gemini-API auf
+        
         const apiResponse = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -66,18 +79,25 @@ exports.handler = async (event, context) => {
 
         if (!apiResponse.ok) {
             const errorBody = await apiResponse.text();
-            console.error('Google API Error:', errorBody);
-            throw new Error(`Fehler bei der Kommunikation mit der KI: ${apiResponse.statusText}`);
+            throw new Error(`Fehler bei der Kommunikation mit der KI: ${errorBody}`);
         }
 
         const result = await apiResponse.json();
         const rawJson = result.candidates[0].content.parts[0].text;
-        const parsedData = JSON.parse(rawJson);
+        const planData = JSON.parse(rawJson);
 
-        // Sende das Ergebnis zurück an das Frontend
+        // 4. Generierten Plan in Firestore speichern
+        const userDocRef = db.collection('users').doc(uid);
+        await userDocRef.set({
+            profile: userProfile,
+            plan: planData,
+            createdAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        // 5. Plan an das Frontend zurücksenden
         return {
             statusCode: 200,
-            body: JSON.stringify(parsedData)
+            body: JSON.stringify(planData)
         };
 
     } catch (error) {

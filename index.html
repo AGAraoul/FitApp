@@ -8,76 +8,78 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Eigene CSS-Datei verlinken -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="antialiased">
 
     <div id="app" class="min-h-screen flex flex-col items-center justify-center p-4">
 
-        <!-- Seite 1: Login / Registrierung -->
+        <!-- Ladeanzeige beim Start -->
+        <div id="authLoadingPage" class="page text-center">
+            <div class="loader"></div>
+        </div>
+
+        <!-- Seite 1: Registrierung -->
+        <div id="registrationPage" class="page w-full max-w-2xl">
+            <div class="card p-8 shadow-lg">
+                <h2 class="text-3xl font-bold text-center mb-4">Erstelle dein Konto</h2>
+                <p class="text-gray-400 text-center mb-8">Fülle alles aus, um deinen persönlichen Plan zu erhalten.</p>
+                
+                <form id="registrationForm" class="space-y-6">
+                    <!-- Alle Fragen werden hier dynamisch eingefügt -->
+                    <div id="questionContainer" class="space-y-6"></div>
+                    <button type="submit" class="btn-primary w-full !mt-8">Konto erstellen & Plan generieren</button>
+                </form>
+
+                <div class="text-center mt-6">
+                    <p class="text-gray-400">Schon ein Konto? 
+                        <button id="showLoginBtn" class="font-semibold text-blue-400 hover:underline">Hier anmelden</button>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seite 2: Login -->
         <div id="loginPage" class="page w-full max-w-md">
             <div class="card p-8 shadow-lg">
-                <div class="text-center mb-8">
-                    <h1 class="text-3xl font-bold text-white">FitFusion</h1>
-                    <p class="text-gray-400 mt-2">Dein persönlicher KI Fitness Coach</p>
-                </div>
-                <form id="loginForm">
-                    <div class="mb-4">
-                        <label for="email" class="block mb-2 text-sm font-medium text-gray-300">Email</label>
-                        <input type="email" id="email" class="input-field" placeholder="deine.email@beispiel.com" required>
+                <h2 class="text-3xl font-bold text-center mb-4">Willkommen zurück!</h2>
+                <form id="loginForm" class="space-y-6">
+                    <div>
+                        <label for="loginEmail" class="block mb-2 text-sm font-medium text-gray-300">Email</label>
+                        <input type="email" id="loginEmail" class="input-field" required>
                     </div>
-                    <div class="mb-6">
-                        <label for="password" class="block mb-2 text-sm font-medium text-gray-300">Passwort</label>
-                        <input type="password" id="password" class="input-field" placeholder="••••••••" required>
+                    <div>
+                        <label for="loginPassword" class="block mb-2 text-sm font-medium text-gray-300">Passwort</label>
+                        <input type="password" id="loginPassword" class="input-field" required>
                     </div>
-                    <button type="submit" class="btn-primary w-full">Anmelden / Registrieren</button>
+                    <button type="submit" class="btn-primary w-full !mt-8">Anmelden</button>
                 </form>
-            </div>
-        </div>
-
-        <!-- Seite 2: Datenerfassung (Fragebogen) -->
-        <div id="dataCollectionPage" class="page w-full max-w-2xl">
-            <div class="card p-8 shadow-lg">
-                <h2 class="text-2xl font-bold text-center mb-2">Erzähl uns etwas über dich</h2>
-                <p class="text-gray-400 text-center mb-6">Diese Informationen helfen uns, deinen perfekten Plan zu erstellen.</p>
-                
-                <div class="w-full progress-bar-bg rounded-full h-2.5 mb-8">
-                    <div id="progressBar" class="progress-bar-fill h-2.5 rounded-full" style="width: 0%"></div>
-                </div>
-
-                <div id="questionContainer"></div>
-
-                <div class="flex justify-between mt-8">
-                    <button id="prevBtn" class="btn-primary bg-gray-600 hover:bg-gray-500" disabled>Zurück</button>
-                    <button id="nextBtn" class="btn-primary">Weiter</button>
+                <div class="text-center mt-6">
+                    <p class="text-gray-400">Noch kein Konto? 
+                        <button id="showRegisterBtn" class="font-semibold text-blue-400 hover:underline">Jetzt registrieren</button>
+                    </p>
                 </div>
             </div>
         </div>
 
-        <!-- Seite 3: Ladebildschirm -->
-        <div id="loadingPage" class="page text-center">
-             <div class="card p-8 shadow-lg flex flex-col items-center">
-                <div class="loader mb-4"></div>
-                <h2 class="text-xl font-semibold">Wir erstellen deinen Plan...</h2>
-                <p class="text-gray-400">Deine personalisierten Fitness- und Ernährungsdaten werden generiert.</p>
-            </div>
-        </div>
-
-        <!-- Seite 4: Dashboard mit dem Trainingsplan -->
+        <!-- Seite 3: Dashboard mit dem Trainingsplan -->
         <div id="dashboardPage" class="page w-full max-w-6xl">
             <div class="card p-8 shadow-lg">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-                    <h2 class="text-3xl font-bold mb-4 md:mb-0">Dein persönliches Dashboard</h2>
-                    <div class="card p-4 bg-gray-800 text-center">
-                        <h3 class="text-lg font-semibold">Täglicher Kalorienbedarf</h3>
-                        <p id="calorieResult" class="text-2xl font-bold text-blue-400"></p>
+                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                    <div>
+                        <h2 class="text-3xl font-bold">Dein Dashboard</h2>
+                        <p id="userEmailDisplay" class="text-gray-400"></p>
+                    </div>
+                    <div class="flex items-center gap-4 mt-4 md:mt-0">
+                        <div class="card p-4 bg-gray-800 text-center">
+                            <h3 class="text-lg font-semibold">Tägl. Kalorienbedarf</h3>
+                            <p id="calorieResult" class="text-2xl font-bold text-blue-400"></p>
+                        </div>
+                        <button id="logoutBtn" class="btn-primary bg-red-600 hover:bg-red-500">Logout</button>
                     </div>
                 </div>
                 
                 <div id="planResult" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4"></div>
-
-                <button id="resetBtn" class="btn-primary mt-8 bg-red-600 hover:bg-red-500">Neu starten</button>
             </div>
         </div>
     </div>
@@ -93,7 +95,12 @@
         </div>
     </div>
 
-    <!-- Eigene JS-Datei verlinken -->
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+
+    <!-- Eigene JS-Datei -->
     <script src="script.js"></script>
 </body>
 </html>
