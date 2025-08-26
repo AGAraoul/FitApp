@@ -83,6 +83,16 @@ exports.handler = async (event, context) => {
         }
 
         const result = await apiResponse.json();
+
+        // --- KORREKTUR: Prüfen, ob die KI-Antwort gültig ist ---
+        if (!result.candidates || !result.candidates[0] || !result.candidates[0].content) {
+            // Wenn die Antwort ungültig ist, logge die gesamte Antwort für die Fehlersuche
+            console.error("Ungültige API-Antwort von Gemini:", JSON.stringify(result));
+            // Gib eine klare Fehlermeldung zurück
+            throw new Error("Die KI hat keine gültigen Daten zurückgegeben. Dies liegt oft an den Sicherheitseinstellungen der API.");
+        }
+        // --- ENDE DER KORREKTUR ---
+
         const rawJson = result.candidates[0].content.parts[0].text;
         const planData = JSON.parse(rawJson);
 
