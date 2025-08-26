@@ -1,6 +1,6 @@
 {
   "name": "fitfusion-app",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "KI Fitness Coach",
   "main": "index.html",
   "scripts": {
