@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- HIER DEINE FIREBASE KONFIGURATION EINFÜGEN ---
     const firebaseConfig = {
-        apiKey: "DEIN_API_KEY",
+        apiKey: "AIzaSyA12D2TLiR3E6I4gXZlD2IxT9h2nQPgJKs",
         authDomain: "DEIN_AUTH_DOMAIN",
         projectId: "DEIN_PROJECT_ID",
         storageBucket: "DEIN_STORAGE_BUCKET",
