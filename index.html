@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BeFit - Dein KI Fitness Coach</title>
+    <title>FitFusion - Dein KI Fitness Coach</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,7 +26,6 @@
                 <p class="text-gray-400 text-center mb-8">Fülle alles aus, um deinen persönlichen Plan zu erhalten.</p>
                 
                 <form id="registrationForm" class="space-y-6">
-                    <!-- Alle Fragen werden hier dynamisch eingefügt -->
                     <div id="questionContainer" class="space-y-6"></div>
                     <button type="submit" class="btn-primary w-full !mt-8">Konto erstellen & Plan generieren</button>
                 </form>
@@ -59,6 +58,15 @@
                         <button id="showRegisterBtn" class="font-semibold text-blue-400 hover:underline">Jetzt registrieren</button>
                     </p>
                 </div>
+            </div>
+        </div>
+        
+        <!-- NEU: Dedizierte Ladeseite für die Plan-Erstellung -->
+        <div id="planCreationLoadingPage" class="page text-center">
+             <div class="card p-8 shadow-lg flex flex-col items-center">
+                <div class="loader mb-4"></div>
+                <h2 class="text-xl font-semibold">Wir erstellen deinen persönlichen Plan...</h2>
+                <p class="text-gray-400">Dies kann einen Moment dauern. Bitte schließe das Fenster nicht.</p>
             </div>
         </div>
 

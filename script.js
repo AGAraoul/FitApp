@@ -1,14 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- HIER DEINE FIREBASE KONFIGURATION EINFÜGEN ---
     const firebaseConfig = {
-  apiKey: "AIzaSyBb0nvgFpiWaOyiiQtU6wFTd5cA4o4NBSk",
-  authDomain: "befit-personaltrainer.firebaseapp.com",
-  projectId: "befit-personaltrainer",
-  storageBucket: "befit-personaltrainer.firebasestorage.app",
-  messagingSenderId: "1075828940079",
-  appId: "1:1075828940079:web:afb36b6e45217482aa55da",
-  measurementId: "G-B5SS4JMZEH"
-};
+        apiKey: "DEIN_API_KEY",
+        authDomain: "DEIN_AUTH_DOMAIN",
+        projectId: "DEIN_PROJECT_ID",
+        storageBucket: "DEIN_STORAGE_BUCKET",
+        messagingSenderId: "DEIN_MESSAGING_SENDER_ID",
+        appId: "DEIN_APP_ID"
+    };
 
     // Firebase initialisieren
     firebase.initializeApp(firebaseConfig);
@@ -20,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
         authLoading: document.getElementById('authLoadingPage'),
         registration: document.getElementById('registrationPage'),
         login: document.getElementById('loginPage'),
+        planCreationLoading: document.getElementById('planCreationLoadingPage'), // NEU
         dashboard: document.getElementById('dashboardPage'),
     };
     const questionContainer = document.getElementById('questionContainer');
@@ -80,9 +80,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    // --- ÜBERARBEITETE REGISTRIERUNGSFUNKTION ---
     const handleRegistration = async (e) => {
         e.preventDefault();
-        const formData = new FormData(e.target);
         const userData = {};
         
         questions.forEach(q => {
@@ -97,13 +97,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const { email, password, ...userProfile } = userData;
 
         try {
+            // 1. Zeige die Lade-Animation
+            showPage('planCreationLoading');
+
+            // 2. Erstelle den Nutzer bei Firebase
             const userCredential = await auth.createUserWithEmailAndPassword(email, password);
             const user = userCredential.user;
             
-            alert('Konto wird erstellt und Plan generiert... Dies kann einen Moment dauern.');
-
+            // 3. Hole das Token für die sichere Kommunikation
             const idToken = await user.getIdToken(true);
 
+            // 4. Rufe die Netlify Function auf, um den Plan zu generieren und zu speichern
             const response = await fetch('/.netlify/functions/generatePlan', {
                 method: 'POST',
                 headers: { 
@@ -119,12 +123,17 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const planData = await response.json();
+
+            // 5. Zeige das Ergebnis DIREKT an
+            document.getElementById('userEmailDisplay').textContent = user.email;
             displayResults(planData);
             showPage('dashboard');
 
         } catch (error) {
             console.error("Registrierungsfehler:", error);
             alert(`Fehler: ${error.message}`);
+            // Bei Fehler zurück zur Registrierung
+            showPage('registration'); 
         }
     };
 
@@ -184,15 +193,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Event Listener ---
     auth.onAuthStateChanged(async user => {
         if (user) {
-            // User ist eingeloggt
             const userDoc = await db.collection('users').doc(user.uid).get();
             if (userDoc.exists) {
                 const userData = userDoc.data();
-                displayResults(userData.plan);
                 document.getElementById('userEmailDisplay').textContent = user.email;
+                displayResults(userData.plan);
                 showPage('dashboard');
             } else {
-                // Sollte nicht passieren, wenn Registrierung klappt
+                // Wenn der Nutzer existiert, aber kein DB-Eintrag da ist -> zur Registrierung
                 showPage('registration');
             }
         } else {
@@ -230,5 +238,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Initialisierung ---
     renderQuestions();
-    showPage('authLoading'); // Starte mit Ladeanzeige, bis Auth-Status klar ist
+    showPage('authLoading'); 
 });
