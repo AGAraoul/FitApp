@@ -19,18 +19,29 @@
             <div class="loader"></div>
         </div>
 
-        <!-- Seite 1: Registrierung -->
+        <!-- Seite 1: Registrierung (Multi-Step) -->
         <div id="registrationPage" class="page w-full max-w-2xl">
             <div class="card p-8 shadow-lg">
-                <h2 class="text-3xl font-bold text-center mb-4">Erstelle dein Konto</h2>
-                <p class="text-gray-400 text-center mb-8">Fülle alles aus, um deinen persönlichen Plan zu erhalten.</p>
+                <!-- Fortschrittsanzeige -->
+                <div class="mb-8">
+                    <div class="w-full progress-bar-bg rounded-full h-2.5">
+                        <div id="progressBar" class="progress-bar-fill h-2.5 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
                 
-                <form id="registrationForm" class="space-y-6">
-                    <div id="questionContainer" class="space-y-6"></div>
-                    <button type="submit" class="btn-primary w-full !mt-8">Konto erstellen & Plan generieren</button>
+                <form id="registrationForm">
+                    <!-- Container für die einzelnen Schritte -->
+                    <div id="form-steps" class="relative overflow-hidden">
+                        <!-- Schritte werden hier dynamisch eingefügt -->
+                    </div>
                 </form>
 
-                <div class="text-center mt-6">
+                <!-- Navigations-Buttons -->
+                <div class="flex justify-between mt-8">
+                    <button id="prevBtn" class="btn-primary bg-gray-600 hover:bg-gray-500" disabled>Zurück</button>
+                    <button id="nextBtn" class="btn-primary">Weiter</button>
+                </div>
+                 <div class="text-center mt-6">
                     <p class="text-gray-400">Schon ein Konto? 
                         <button id="showLoginBtn" class="font-semibold text-blue-400 hover:underline">Hier anmelden</button>
                     </p>
@@ -61,7 +72,7 @@
             </div>
         </div>
         
-        <!-- NEU: Dedizierte Ladeseite für die Plan-Erstellung -->
+        <!-- Ladeseite für die Plan-Erstellung -->
         <div id="planCreationLoadingPage" class="page text-center">
              <div class="card p-8 shadow-lg flex flex-col items-center">
                 <div class="loader mb-4"></div>
@@ -70,7 +81,7 @@
             </div>
         </div>
 
-        <!-- Seite 3: Dashboard mit dem Trainingsplan -->
+        <!-- Dashboard -->
         <div id="dashboardPage" class="page w-full max-w-6xl">
             <div class="card p-8 shadow-lg">
                  <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
@@ -86,13 +97,12 @@
                         <button id="logoutBtn" class="btn-primary bg-red-600 hover:bg-red-500">Logout</button>
                     </div>
                 </div>
-                
                 <div id="planResult" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4"></div>
             </div>
         </div>
     </div>
 
-    <!-- Modal-Struktur für Trainingsdetails -->
+    <!-- Modal-Struktur -->
     <div id="detailsModal" class="modal-overlay">
         <div class="modal-container">
             <div class="flex justify-between items-center mb-4">
@@ -103,12 +113,9 @@
         </div>
     </div>
 
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-
-    <!-- Eigene JS-Datei -->
     <script src="script.js"></script>
 </body>
 </html>
