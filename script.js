@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
         authLoading: document.getElementById('authLoadingPage'),
         registration: document.getElementById('registrationPage'),
         login: document.getElementById('loginPage'),
-        planCreationLoading: document.getElementById('planCreationLoadingPage'), // NEU
+        planCreationLoading: document.getElementById('planCreationLoadingPage'),
         dashboard: document.getElementById('dashboardPage'),
     };
     const questionContainer = document.getElementById('questionContainer');
@@ -35,6 +35,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalContent = document.getElementById('modalContent');
     const closeModalBtn = document.getElementById('closeModalBtn');
     
+    // --- Anwendungsstatus ---
+    let isRegistering = false; // NEUE FLAG, um den Registrierungsprozess zu verfolgen
+
     // --- Fragen für Registrierung ---
     const questions = [
         { id: 'email', label: 'Deine Email-Adresse', type: 'email', placeholder: 'deine.email@beispiel.com' },
@@ -81,9 +84,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // --- ÜBERARBEITETE REGISTRIERUNGSFUNKTION ---
     const handleRegistration = async (e) => {
         e.preventDefault();
+        isRegistering = true; // KORREKTUR: Flag am Anfang setzen
         const userData = {};
         
         questions.forEach(q => {
@@ -98,17 +101,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const { email, password, ...userProfile } = userData;
 
         try {
-            // 1. Zeige die Lade-Animation
             showPage('planCreationLoading');
-
-            // 2. Erstelle den Nutzer bei Firebase
             const userCredential = await auth.createUserWithEmailAndPassword(email, password);
             const user = userCredential.user;
-            
-            // 3. Hole das Token für die sichere Kommunikation
             const idToken = await user.getIdToken(true);
 
-            // 4. Rufe die Netlify Function auf, um den Plan zu generieren und zu speichern
             const response = await fetch('/.netlify/functions/generatePlan', {
                 method: 'POST',
                 headers: { 
@@ -125,7 +122,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const planData = await response.json();
 
-            // 5. Zeige das Ergebnis DIREKT an
             document.getElementById('userEmailDisplay').textContent = user.email;
             displayResults(planData);
             showPage('dashboard');
@@ -133,8 +129,9 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error("Registrierungsfehler:", error);
             alert(`Fehler: ${error.message}`);
-            // Bei Fehler zurück zur Registrierung
             showPage('registration'); 
+        } finally {
+            isRegistering = false; // KORREKTUR: Flag am Ende immer zurücksetzen
         }
     };
 
@@ -145,7 +142,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             await auth.signInWithEmailAndPassword(email, password);
-            // Der onAuthStateChanged Listener übernimmt den Rest
         } catch (error) {
             console.error("Login-Fehler:", error);
             alert(`Fehler: ${error.message}`);
@@ -155,7 +151,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const handleLogout = async () => {
         try {
             await auth.signOut();
-            // Der onAuthStateChanged Listener übernimmt den Rest
         } catch (error) {
             console.error("Logout-Fehler:", error);
             alert(`Fehler: ${error.message}`);
@@ -193,6 +188,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Event Listener ---
     auth.onAuthStateChanged(async user => {
+        // KORREKTUR: Listener pausieren, während die Registrierung läuft
+        if (isRegistering) {
+            return;
+        }
+
         if (user) {
             const userDoc = await db.collection('users').doc(user.uid).get();
             if (userDoc.exists) {
@@ -201,11 +201,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 displayResults(userData.plan);
                 showPage('dashboard');
             } else {
-                // Wenn der Nutzer existiert, aber kein DB-Eintrag da ist -> zur Registrierung
                 showPage('registration');
             }
         } else {
-            // User ist ausgeloggt
             showPage('registration');
         }
     });
