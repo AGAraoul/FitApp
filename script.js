@@ -1,13 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- HIER DEINE FIREBASE KONFIGURATION EINFÜGEN ---
-    const firebaseConfig = {
-  apiKey: "AIzaSyBb0nvgFpiWaOyiiQtU6wFTd5cA4o4NBSk",
-  authDomain: "befit-personaltrainer.firebaseapp.com",
-  projectId: "befit-personaltrainer",
-  storageBucket: "befit-personaltrainer.firebasestorage.app",
-  messagingSenderId: "1075828940079",
-  appId: "1:1075828940079:web:afb36b6e45217482aa55da",
-  measurementId: "G-B5SS4JMZEH"
+const firebaseConfig = {
+    apiKey: "AIzaSyBb0nvgFpiWaOyiiQtU6wFTd5cA4o4NBSk",
+    authDomain: "befit-personaltrainer.firebaseapp.com",
+    projectId: "befit-personaltrainer",
+    storageBucket: "befit-personaltrainer.firebasestorage.app",
+    messagingSenderId: "1075828940079",
+    appId: "1:1075828940079:web:afb36b6e45217482aa55da",
+    measurementId: "G-B5SS4JMZEH"
 };
 
     firebase.initializeApp(firebaseConfig);
@@ -21,17 +21,29 @@ document.addEventListener('DOMContentLoaded', () => {
         login: document.getElementById('loginPage'),
         planCreationLoading: document.getElementById('planCreationLoadingPage'),
         dashboard: document.getElementById('dashboardPage'),
+        updatePlan: document.getElementById('updatePlanPage'), // NEU
     };
+    // Registrierungs-Formular
     const registrationForm = document.getElementById('registrationForm');
     const formStepsContainer = document.getElementById('form-steps');
     const progressBar = document.getElementById('progressBar');
     const nextBtn = document.getElementById('nextBtn');
     const prevBtn = document.getElementById('prevBtn');
+    // Login-Formular
     const loginForm = document.getElementById('loginForm');
     const showLoginBtn = document.getElementById('showLoginBtn');
     const showRegisterBtn = document.getElementById('showRegisterBtn');
+    // Dashboard
     const logoutBtn = document.getElementById('logoutBtn');
+    const newPlanBtn = document.getElementById('newPlanBtn'); // NEU
     const planResultContainer = document.getElementById('planResult');
+    // Update-Formular
+    const updateFormStepsContainer = document.getElementById('update-form-steps'); // NEU
+    const updateProgressBar = document.getElementById('updateProgressBar'); // NEU
+    const updateNextBtn = document.getElementById('updateNextBtn'); // NEU
+    const updatePrevBtn = document.getElementById('updatePrevBtn'); // NEU
+    const cancelUpdateBtn = document.getElementById('cancelUpdateBtn'); // NEU
+    // Modal
     const detailsModal = document.getElementById('detailsModal');
     const modalTitle = document.getElementById('modalTitle');
     const modalContent = document.getElementById('modalContent');
@@ -39,8 +51,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Anwendungsstatus ---
     let planListener = null;
-    let currentStep = 0;
-    const userData = {};
+    let currentRegStep = 0;
+    let currentUpdateStep = 0; // NEU
+    const regUserData = {};
+    const updateUserData = {}; // NEU
 
     // --- Fragen in Schritten gruppiert ---
     const registrationSteps = [
@@ -83,70 +97,46 @@ document.addEventListener('DOMContentLoaded', () => {
             ]
         }
     ];
+    
+    // NEU: Fragen für das Update-Formular (ohne Account-Daten)
+    const updatePlanSteps = registrationSteps.slice(1); // Kopiert alle Schritte außer dem ersten
 
-    // --- Funktionen ---
-
-    const showPage = (pageName) => {
-        Object.values(pages).forEach(page => page.style.display = 'none');
-        if (pages[pageName]) pages[pageName].style.display = 'block';
-    };
-
-    const buildFormSteps = () => {
-        formStepsContainer.innerHTML = '';
-        registrationSteps.forEach((step) => {
+    // --- Allgemeine Multi-Step Formular Funktionen ---
+    const buildFormSteps = (steps, container, idPrefix = '') => {
+        container.innerHTML = '';
+        steps.forEach((step) => {
             const stepElement = document.createElement('div');
             stepElement.classList.add('form-step', 'space-y-6');
-
             let stepHtml = `<h2 class="text-2xl font-bold text-center">${step.title}</h2>`;
             step.questions.forEach(q => {
+                const questionId = `${q.id}${idPrefix}`;
                 let inputHtml = '';
                 const daysOfWeek = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
                 switch (q.type) {
-                    case 'select': inputHtml = `<select id="${q.id}" class="input-field" required>${q.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}</select>`; break;
-                    case 'select_with_ai': inputHtml = `<div class="flex flex-col sm:flex-row items-center gap-4"><select id="${q.id}" class="input-field w-full" required>${q.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}</select><button type="button" class="ai-recommend-btn btn-primary bg-indigo-600 hover:bg-indigo-500 w-full sm:w-auto whitespace-nowrap px-4 py-3">KI-Empfehlung</button></div>`; break;
-                    case 'multiselect_days': inputHtml = `<div id="${q.id}" class="grid grid-cols-2 sm:grid-cols-4 gap-3">${daysOfWeek.map(day => `<div><input type="checkbox" id="day-${day}" name="sportDays" value="${day}" class="hidden day-checkbox"><label for="day-${day}" class="day-checkbox-label">${day}</label></div>`).join('')}</div>`; break;
-                    default: inputHtml = `<input type="${q.type}" id="${q.id}" class="input-field" placeholder="${q.placeholder || ''}" required>`;
+                    case 'select': inputHtml = `<select id="${questionId}" class="input-field" required>${q.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}</select>`; break;
+                    case 'select_with_ai': inputHtml = `<div class="flex flex-col sm:flex-row items-center gap-4"><select id="${questionId}" class="input-field w-full" required>${q.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}</select><button type="button" class="ai-recommend-btn btn-primary bg-indigo-600 hover:bg-indigo-500 w-full sm:w-auto whitespace-nowrap px-4 py-3">KI-Empfehlung</button></div>`; break;
+                    case 'multiselect_days': inputHtml = `<div id="${questionId}" class="grid grid-cols-2 sm:grid-cols-4 gap-3">${daysOfWeek.map(day => `<div><input type="checkbox" id="day-${day}${idPrefix}" name="sportDays${idPrefix}" value="${day}" class="hidden day-checkbox"><label for="day-${day}${idPrefix}" class="day-checkbox-label">${day}</label></div>`).join('')}</div>`; break;
+                    default: inputHtml = `<input type="${q.type}" id="${questionId}" class="input-field" placeholder="${q.placeholder || ''}" required>`;
                 }
-                stepHtml += `<div><label for="${q.id}" class="block mb-2 text-sm font-medium text-gray-300">${q.label}</label>${inputHtml}</div>`;
+                stepHtml += `<div><label for="${questionId}" class="block mb-2 text-sm font-medium text-gray-300">${q.label}</label>${inputHtml}</div>`;
             });
             stepElement.innerHTML = stepHtml;
-            formStepsContainer.appendChild(stepElement);
+            container.appendChild(stepElement);
         });
     };
 
-    const renderStep = () => {
-        formStepsContainer.childNodes.forEach((step, index) => {
+    const renderStep = (stepIndex, container) => {
+        container.childNodes.forEach((step, index) => {
             step.classList.remove('active', 'prev', 'next');
-            if (index === currentStep) {
-                step.classList.add('active');
-            } else if (index < currentStep) {
-                step.classList.add('prev');
-            } else {
-                step.classList.add('next');
-            }
+            if (index === stepIndex) step.classList.add('active');
+            else if (index < stepIndex) step.classList.add('prev');
+            else step.classList.add('next');
         });
-        updateProgressBar();
-        updateNavButtons();
     };
 
-    const updateProgressBar = () => {
-        const progress = (currentStep / (registrationSteps.length - 1)) * 100;
-        progressBar.style.width = `${progress}%`;
-    };
-
-    const updateNavButtons = () => {
-        prevBtn.disabled = currentStep === 0;
-        if (currentStep === registrationSteps.length - 1) {
-            nextBtn.textContent = 'Plan generieren';
-        } else {
-            nextBtn.textContent = 'Weiter';
-        }
-    };
-
-    const validateStep = () => {
-        const currentQuestions = registrationSteps[currentStep].questions;
-        for (const question of currentQuestions) {
-            const inputElement = document.getElementById(question.id);
+    const validateStep = (stepIndex, steps, idPrefix = '') => {
+        for (const question of steps[stepIndex].questions) {
+            const inputElement = document.getElementById(`${question.id}${idPrefix}`);
             if (inputElement.hasAttribute('required') && !inputElement.value) {
                 alert(`Bitte fülle das Feld "${question.label}" aus.`);
                 return false;
@@ -161,21 +151,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return true;
     };
-
-    const saveStepData = () => {
-        registrationSteps[currentStep].questions.forEach(q => {
+    
+    const saveStepData = (stepIndex, steps, dataObject, idPrefix = '') => {
+        steps[stepIndex].questions.forEach(q => {
             if (q.id === 'passwordConfirm') return;
+            const questionId = `${q.id}${idPrefix}`;
             if (q.type === 'multiselect_days') {
-                const checkedDays = Array.from(document.querySelectorAll(`input[name="sportDays"]:checked`)).map(cb => cb.value);
-                userData[q.id] = checkedDays.length > 0 ? checkedDays.join(', ') : 'Keine';
+                const checkedDays = Array.from(document.querySelectorAll(`input[name="sportDays${idPrefix}"]:checked`)).map(cb => cb.value);
+                dataObject[q.id] = checkedDays.length > 0 ? checkedDays.join(', ') : 'Keine';
             } else {
-                userData[q.id] = document.getElementById(q.id).value;
+                dataObject[q.id] = document.getElementById(questionId).value;
             }
         });
     };
-    
+
+    // --- Spezifische Anwendungslogik ---
+    const showPage = (pageName) => {
+        Object.values(pages).forEach(page => page.style.display = 'none');
+        if (pages[pageName]) pages[pageName].style.display = 'block';
+    };
+
     const handleRegistration = async () => {
-        const { email, password, ...userProfile } = userData;
+        const { email, password, ...userProfile } = regUserData;
         try {
             showPage('planCreationLoading');
             const userCredential = await auth.createUserWithEmailAndPassword(email, password);
@@ -188,6 +185,25 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Registrierungsfehler:", error);
             alert(`Fehler: ${error.message}`);
             showPage('registration'); 
+        }
+    };
+    
+    // NEU: Logik für Plan-Update
+    const handlePlanUpdate = async () => {
+        const user = auth.currentUser;
+        if (!user) return alert("Fehler: Nicht angemeldet.");
+
+        try {
+            showPage('planCreationLoading');
+            const userDocRef = db.collection('users').doc(user.uid);
+            await userDocRef.update({
+                profile: updateUserData,
+                plan: firebase.firestore.FieldValue.delete()
+            });
+        } catch (error) {
+            console.error("Fehler beim Aktualisieren des Plans:", error);
+            alert(`Fehler: ${error.message}`);
+            showPage('dashboard');
         }
     };
 
@@ -207,7 +223,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const displayResults = (data) => {
         document.getElementById('calorieResult').textContent = data.calories || 'N/A';
         planResultContainer.innerHTML = ''; 
-
         if (data.weeklyPlan && data.weeklyPlan.length === 7) {
             data.weeklyPlan.forEach(dayPlan => {
                 const isWorkout = dayPlan.workoutTitle.toLowerCase() !== 'ruhetag';
@@ -263,33 +278,74 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Registrierungs-Navigation
     nextBtn.addEventListener('click', () => {
-        if (!validateStep()) return;
-        saveStepData();
-        if (currentStep < registrationSteps.length - 1) {
-            currentStep++;
-            renderStep();
+        if (!validateStep(currentRegStep, registrationSteps)) return;
+        saveStepData(currentRegStep, registrationSteps, regUserData);
+        if (currentRegStep < registrationSteps.length - 1) {
+            currentRegStep++;
+            renderStep(currentRegStep, formStepsContainer);
+            progressBar.style.width = `${(currentRegStep / (registrationSteps.length - 1)) * 100}%`;
+            prevBtn.disabled = false;
+            if (currentRegStep === registrationSteps.length - 1) nextBtn.textContent = 'Plan generieren';
         } else {
             handleRegistration();
         }
     });
-
     prevBtn.addEventListener('click', () => {
-        if (currentStep > 0) {
-            currentStep--;
-            renderStep();
+        if (currentRegStep > 0) {
+            currentRegStep--;
+            renderStep(currentRegStep, formStepsContainer);
+            progressBar.style.width = `${(currentRegStep / (registrationSteps.length - 1)) * 100}%`;
+            nextBtn.textContent = 'Weiter';
+            if (currentRegStep === 0) prevBtn.disabled = true;
         }
     });
 
+    // Update-Navigation (NEU)
+    updateNextBtn.addEventListener('click', () => {
+        if (!validateStep(currentUpdateStep, updatePlanSteps, '_update')) return;
+        saveStepData(currentUpdateStep, updatePlanSteps, updateUserData, '_update');
+        if (currentUpdateStep < updatePlanSteps.length - 1) {
+            currentUpdateStep++;
+            renderStep(currentUpdateStep, updateFormStepsContainer);
+            updateProgressBar.style.width = `${(currentUpdateStep / (updatePlanSteps.length - 1)) * 100}%`;
+            updatePrevBtn.disabled = false;
+            if (currentUpdateStep === updatePlanSteps.length - 1) updateNextBtn.textContent = 'Neuen Plan generieren';
+        } else {
+            handlePlanUpdate();
+        }
+    });
+    updatePrevBtn.addEventListener('click', () => {
+        if (currentUpdateStep > 0) {
+            currentUpdateStep--;
+            renderStep(currentUpdateStep, updateFormStepsContainer);
+            updateProgressBar.style.width = `${(currentUpdateStep / (updatePlanSteps.length - 1)) * 100}%`;
+            updateNextBtn.textContent = 'Weiter';
+            if (currentUpdateStep === 0) updatePrevBtn.disabled = true;
+        }
+    });
+    
+    // Andere Listener
     loginForm.addEventListener('submit', handleLogin);
     logoutBtn.addEventListener('click', handleLogout);
     showLoginBtn.addEventListener('click', () => showPage('login'));
     showRegisterBtn.addEventListener('click', () => showPage('registration'));
+    newPlanBtn.addEventListener('click', () => {
+        currentUpdateStep = 0;
+        Object.keys(updateUserData).forEach(key => delete updateUserData[key]);
+        renderStep(currentUpdateStep, updateFormStepsContainer);
+        updateProgressBar.style.width = '0%';
+        updatePrevBtn.disabled = true;
+        updateNextBtn.textContent = 'Weiter';
+        showPage('updatePlan');
+    });
+    cancelUpdateBtn.addEventListener('click', () => showPage('dashboard'));
     planResultContainer.addEventListener('click', (e) => {
         const clickedDay = e.target.closest('.day-cell.workout');
         if (clickedDay) openModal(clickedDay.dataset.title, clickedDay.dataset.details);
     });
-    formStepsContainer.addEventListener('click', e => {
+    document.body.addEventListener('click', e => {
         if (e.target.classList.contains('ai-recommend-btn')) {
             const selectElement = e.target.previousElementSibling;
             const aiOptionValue = "KI-Empfehlung";
@@ -304,7 +360,9 @@ document.addEventListener('DOMContentLoaded', () => {
     detailsModal.addEventListener('click', (e) => { if (e.target === detailsModal) closeModal(); });
 
     // --- Initialisierung ---
-    buildFormSteps();
-    renderStep();
+    buildFormSteps(registrationSteps, formStepsContainer);
+    renderStep(currentRegStep, formStepsContainer);
+    buildFormSteps(updatePlanSteps, updateFormStepsContainer, '_update');
+    renderStep(currentUpdateStep, updateFormStepsContainer);
     showPage('authLoading'); 
 });
