@@ -12,7 +12,7 @@
 </head>
 <body class="antialiased">
 
-    <div id="app" class="min-h-screen flex flex-col items-center justify-center p-4">
+    <div id="app" class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-0">
 
         <!-- Ladeanzeige beim Start -->
         <div id="authLoadingPage" class="page text-center">
@@ -20,23 +20,16 @@
         </div>
 
         <!-- Seite 1: Registrierung (Multi-Step) -->
-        <div id="registrationPage" class="page w-full max-w-2xl">
+        <div id="registrationPage" class="page w-full max-w-2xl sm:p-4">
             <div class="card p-8 shadow-lg">
-                <!-- Fortschrittsanzeige -->
                 <div class="mb-8">
                     <div class="w-full progress-bar-bg rounded-full h-2.5">
                         <div id="progressBar" class="progress-bar-fill h-2.5 rounded-full" style="width: 0%"></div>
                     </div>
                 </div>
-                
                 <form id="registrationForm">
-                    <!-- Container für die einzelnen Schritte -->
-                    <div id="form-steps" class="relative overflow-hidden">
-                        <!-- Schritte werden hier dynamisch eingefügt -->
-                    </div>
+                    <div id="form-steps" class="relative overflow-hidden"></div>
                 </form>
-
-                <!-- Navigations-Buttons -->
                 <div class="flex justify-between mt-8">
                     <button id="prevBtn" class="btn-primary bg-gray-600 hover:bg-gray-500" disabled>Zurück</button>
                     <button id="nextBtn" class="btn-primary">Weiter</button>
@@ -50,7 +43,7 @@
         </div>
 
         <!-- Seite 2: Login -->
-        <div id="loginPage" class="page w-full max-w-md">
+        <div id="loginPage" class="page w-full max-w-md sm:p-4">
             <div class="card p-8 shadow-lg">
                 <h2 class="text-3xl font-bold text-center mb-4">Willkommen zurück!</h2>
                 <form id="loginForm" class="space-y-6">
@@ -82,29 +75,28 @@
         </div>
 
         <!-- Dashboard -->
-        <div id="dashboardPage" class="page w-full max-w-6xl">
-            <div class="card p-8 shadow-lg">
-                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+        <div id="dashboardPage" class="page w-full h-full">
+            <div class="card dashboard-card p-6 sm:p-8">
+                 <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
                     <div>
-                        <h2 class="text-3xl font-bold">Dein Dashboard</h2>
-                        <p id="userEmailDisplay" class="text-gray-400"></p>
+                        <h2 class="text-3xl font-bold">Willkommen, <span id="usernameDisplay" class="text-blue-400"></span>!</h2>
+                        <p class="text-gray-400">Hier ist dein persönlicher Wochenplan.</p>
                     </div>
                     <div class="flex items-center gap-4 mt-4 md:mt-0">
-                        <div class="card p-4 bg-gray-800 text-center">
+                        <div id="calorieCard" class="card p-4 bg-gray-800 text-center hidden">
                             <h3 class="text-lg font-semibold">Tägl. Kalorienbedarf</h3>
                             <p id="calorieResult" class="text-2xl font-bold text-blue-400"></p>
                         </div>
-                        <!-- NEUER BUTTON -->
                         <button id="newPlanBtn" class="btn-primary bg-green-600 hover:bg-green-500">Neuen Plan erstellen</button>
                         <button id="logoutBtn" class="btn-primary bg-red-600 hover:bg-red-500">Logout</button>
                     </div>
-                </div>
-                <div id="planResult" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4"></div>
+                </header>
+                <main id="planResult" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4"></main>
             </div>
         </div>
 
-        <!-- NEUE SEITE: Plan aktualisieren (Multi-Step) -->
-        <div id="updatePlanPage" class="page w-full max-w-2xl">
+        <!-- Plan aktualisieren (Multi-Step) -->
+        <div id="updatePlanPage" class="page w-full max-w-2xl sm:p-4">
             <div class="card p-8 shadow-lg">
                 <div class="mb-8">
                     <div class="w-full progress-bar-bg rounded-full h-2.5">
@@ -112,9 +104,7 @@
                     </div>
                 </div>
                 <form id="updatePlanForm">
-                    <div id="update-form-steps" class="relative overflow-hidden">
-                        <!-- Schritte für das Update-Formular -->
-                    </div>
+                    <div id="update-form-steps" class="relative overflow-hidden"></div>
                 </form>
                 <div class="flex justify-between mt-8">
                     <button id="updatePrevBtn" class="btn-primary bg-gray-600 hover:bg-gray-500" disabled>Zurück</button>

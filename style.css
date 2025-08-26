@@ -63,10 +63,10 @@ body {
     to { transform: rotate(360deg); }
 }
 
-/* --- ÜBERARBEITET: Stile für Multi-Step Formular --- */
-#form-steps {
+/* Stile für Multi-Step Formular */
+#form-steps, #update-form-steps {
     position: relative;
-    min-height: 380px; /* Verhindert das Kollabieren während der Animation */
+    min-height: 420px; 
 }
 .form-step {
     width: 100%;
@@ -80,7 +80,7 @@ body {
 .form-step.active {
     transform: translateX(0);
     opacity: 1;
-    position: relative; /* Nur der aktive Schritt nimmt Platz ein */
+    position: relative;
     pointer-events: auto;
 }
 .form-step.prev {
@@ -90,6 +90,25 @@ body {
 .form-step.next {
     transform: translateX(100%);
     opacity: 0;
+}
+
+/* --- NEU: Stile für Vollbild-Dashboard --- */
+#app {
+    width: 100%;
+}
+#dashboardPage {
+    width: 100%;
+    height: 100vh; /* Füllt die gesamte Bildschirmhöhe */
+    padding: 1.5rem;
+}
+.dashboard-card {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+#planResult {
+    flex-grow: 1; /* Lässt den Plan-Container den restlichen Platz füllen */
 }
 
 /* Wochenplan */

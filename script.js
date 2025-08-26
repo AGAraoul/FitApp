@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- HIER DEINE FIREBASE KONFIGURATION EINFÜGEN ---
-const firebaseConfig = {
+   const firebaseConfig = {
     apiKey: "AIzaSyBb0nvgFpiWaOyiiQtU6wFTd5cA4o4NBSk",
     authDomain: "befit-personaltrainer.firebaseapp.com",
     projectId: "befit-personaltrainer",
@@ -21,29 +21,26 @@ const firebaseConfig = {
         login: document.getElementById('loginPage'),
         planCreationLoading: document.getElementById('planCreationLoadingPage'),
         dashboard: document.getElementById('dashboardPage'),
-        updatePlan: document.getElementById('updatePlanPage'), // NEU
+        updatePlan: document.getElementById('updatePlanPage'),
     };
-    // Registrierungs-Formular
     const registrationForm = document.getElementById('registrationForm');
     const formStepsContainer = document.getElementById('form-steps');
     const progressBar = document.getElementById('progressBar');
     const nextBtn = document.getElementById('nextBtn');
     const prevBtn = document.getElementById('prevBtn');
-    // Login-Formular
     const loginForm = document.getElementById('loginForm');
     const showLoginBtn = document.getElementById('showLoginBtn');
     const showRegisterBtn = document.getElementById('showRegisterBtn');
-    // Dashboard
     const logoutBtn = document.getElementById('logoutBtn');
-    const newPlanBtn = document.getElementById('newPlanBtn'); // NEU
+    const newPlanBtn = document.getElementById('newPlanBtn');
     const planResultContainer = document.getElementById('planResult');
-    // Update-Formular
-    const updateFormStepsContainer = document.getElementById('update-form-steps'); // NEU
-    const updateProgressBar = document.getElementById('updateProgressBar'); // NEU
-    const updateNextBtn = document.getElementById('updateNextBtn'); // NEU
-    const updatePrevBtn = document.getElementById('updatePrevBtn'); // NEU
-    const cancelUpdateBtn = document.getElementById('cancelUpdateBtn'); // NEU
-    // Modal
+    const usernameDisplay = document.getElementById('usernameDisplay'); // Geändert
+    const calorieCard = document.getElementById('calorieCard'); // Geändert
+    const updateFormStepsContainer = document.getElementById('update-form-steps');
+    const updateProgressBar = document.getElementById('updateProgressBar');
+    const updateNextBtn = document.getElementById('updateNextBtn');
+    const updatePrevBtn = document.getElementById('updatePrevBtn');
+    const cancelUpdateBtn = document.getElementById('cancelUpdateBtn');
     const detailsModal = document.getElementById('detailsModal');
     const modalTitle = document.getElementById('modalTitle');
     const modalContent = document.getElementById('modalContent');
@@ -52,9 +49,9 @@ const firebaseConfig = {
     // --- Anwendungsstatus ---
     let planListener = null;
     let currentRegStep = 0;
-    let currentUpdateStep = 0; // NEU
+    let currentUpdateStep = 0;
     const regUserData = {};
-    const updateUserData = {}; // NEU
+    const updateUserData = {};
 
     // --- Fragen in Schritten gruppiert ---
     const registrationSteps = [
@@ -98,8 +95,13 @@ const firebaseConfig = {
         }
     ];
     
-    // NEU: Fragen für das Update-Formular (ohne Account-Daten)
-    const updatePlanSteps = registrationSteps.slice(1); // Kopiert alle Schritte außer dem ersten
+    // KORREKTUR: Benutzername wird aus dem Update-Prozess entfernt
+    const updatePlanSteps = registrationSteps.slice(1).map(step => {
+        return {
+            ...step,
+            questions: step.questions.filter(q => q.id !== 'username')
+        };
+    });
 
     // --- Allgemeine Multi-Step Formular Funktionen ---
     const buildFormSteps = (steps, container, idPrefix = '') => {
@@ -188,16 +190,20 @@ const firebaseConfig = {
         }
     };
     
-    // NEU: Logik für Plan-Update
     const handlePlanUpdate = async () => {
         const user = auth.currentUser;
         if (!user) return alert("Fehler: Nicht angemeldet.");
-
         try {
             showPage('planCreationLoading');
             const userDocRef = db.collection('users').doc(user.uid);
+            const doc = await userDocRef.get();
+            if (!doc.exists) throw new Error("Benutzerprofil nicht gefunden.");
+            
+            const existingProfile = doc.data().profile;
+            const newProfile = { ...existingProfile, ...updateUserData };
+
             await userDocRef.update({
-                profile: updateUserData,
+                profile: newProfile,
                 plan: firebase.firestore.FieldValue.delete()
             });
         } catch (error) {
@@ -224,6 +230,7 @@ const firebaseConfig = {
         document.getElementById('calorieResult').textContent = data.calories || 'N/A';
         planResultContainer.innerHTML = ''; 
         if (data.weeklyPlan && data.weeklyPlan.length === 7) {
+            calorieCard.classList.remove('hidden'); 
             data.weeklyPlan.forEach(dayPlan => {
                 const isWorkout = dayPlan.workoutTitle.toLowerCase() !== 'ruhetag';
                 const cellClass = isWorkout ? 'workout' : 'rest';
@@ -254,14 +261,16 @@ const firebaseConfig = {
         if (user) {
             const userDocRef = db.collection('users').doc(user.uid);
             planListener = userDocRef.onSnapshot(async (doc) => {
-                document.getElementById('userEmailDisplay').textContent = user.email;
                 if (doc.exists) {
                     const userData = doc.data();
+                    usernameDisplay.textContent = userData.profile.username || user.email;
+
                     if (userData.plan) {
                         displayResults(userData.plan);
                         showPage('dashboard');
                     } else if (userData.profile) {
                         showPage('dashboard');
+                        calorieCard.classList.add('hidden'); 
                         planResultContainer.innerHTML = `<div class="col-span-full flex flex-col items-center justify-center p-8"><div class="loader mb-4"></div><p class="text-lg font-semibold">Dein persönlicher Plan wird generiert...</p><p class="text-gray-400">Das kann bis zu 30 Sekunden dauern.</p></div>`;
                         const idToken = await user.getIdToken(true);
                         fetch('/.netlify/functions/generatePlan', {
@@ -302,7 +311,7 @@ const firebaseConfig = {
         }
     });
 
-    // Update-Navigation (NEU)
+    // Update-Navigation
     updateNextBtn.addEventListener('click', () => {
         if (!validateStep(currentUpdateStep, updatePlanSteps, '_update')) return;
         saveStepData(currentUpdateStep, updatePlanSteps, updateUserData, '_update');
