@@ -1,14 +1,15 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- HIER DEINE FIREBASE KONFIGURATION EINFÜGEN ---
     const firebaseConfig = {
-    apiKey: "AIzaSyBb0nvgFpiWaOyiiQtU6wFTd5cA4o4NBSk",
-    authDomain: "befit-personaltrainer.firebaseapp.com",
-    projectId: "befit-personaltrainer",
-    storageBucket: "befit-personaltrainer.firebasestorage.app",
-    messagingSenderId: "1075828940079",
-    appId: "1:1075828940079:web:afb36b6e45217482aa55da",
-    measurementId: "G-B5SS4JMZEH"
-};
+        apiKey: "AIzaSyBb0nvgFpiWaOyiiQtU6wFTd5cA4o4NBSk",
+        authDomain: "befit-personaltrainer.firebaseapp.com",
+        projectId: "befit-personaltrainer",
+        storageBucket: "befit-personaltrainer.appspot.com",
+        messagingSenderId: "1075828940079",
+        appId: "1:1075828940079:web:afb36b6e45217482aa55da",
+        measurementId: "G-B5SS4JMZEH"
+    };
+
 
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
@@ -34,8 +35,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const logoutBtn = document.getElementById('logoutBtn');
     const newPlanBtn = document.getElementById('newPlanBtn');
     const planResultContainer = document.getElementById('planResult');
-    const usernameDisplay = document.getElementById('usernameDisplay'); // Geändert
-    const calorieCard = document.getElementById('calorieCard'); // Geändert
+    const usernameDisplay = document.getElementById('usernameDisplay');
+    // ENTFERNT: Kalorien-Elemente sind nicht mehr nötig
+    // const calorieCard = document.getElementById('calorieCard');
     const updateFormStepsContainer = document.getElementById('update-form-steps');
     const updateProgressBar = document.getElementById('updateProgressBar');
     const updateNextBtn = document.getElementById('updateNextBtn');
@@ -94,8 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ]
         }
     ];
-    
-    // KORREKTUR: Benutzername wird aus dem Update-Prozess entfernt
+
     const updatePlanSteps = registrationSteps.slice(1).map(step => {
         return {
             ...step,
@@ -139,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const validateStep = (stepIndex, steps, idPrefix = '') => {
         for (const question of steps[stepIndex].questions) {
             const inputElement = document.getElementById(`${question.id}${idPrefix}`);
-            if (inputElement.hasAttribute('required') && !inputElement.value) {
+            if (inputElement && inputElement.hasAttribute('required') && !inputElement.value) {
                 alert(`Bitte fülle das Feld "${question.label}" aus.`);
                 return false;
             }
@@ -153,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return true;
     };
-    
+
     const saveStepData = (stepIndex, steps, dataObject, idPrefix = '') => {
         steps[stepIndex].questions.forEach(q => {
             if (q.id === 'passwordConfirm') return;
@@ -162,7 +163,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const checkedDays = Array.from(document.querySelectorAll(`input[name="sportDays${idPrefix}"]:checked`)).map(cb => cb.value);
                 dataObject[q.id] = checkedDays.length > 0 ? checkedDays.join(', ') : 'Keine';
             } else {
-                dataObject[q.id] = document.getElementById(questionId).value;
+                 const element = document.getElementById(questionId);
+                 if(element) dataObject[q.id] = element.value;
             }
         });
     };
@@ -170,7 +172,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Spezifische Anwendungslogik ---
     const showPage = (pageName) => {
         Object.values(pages).forEach(page => page.style.display = 'none');
-        if (pages[pageName]) pages[pageName].style.display = 'block';
+        if (pages[pageName]) {
+            // GEÄNDERT: Statt 'block' wird 'flex' für die Container verwendet, um das Layout zu steuern
+            pages[pageName].style.display = (pageName.includes('auth') || pageName.includes('Loading') || pageName.includes('update')) ? 'flex' : 'block';
+        }
     };
 
     const handleRegistration = async () => {
@@ -186,10 +191,10 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error("Registrierungsfehler:", error);
             alert(`Fehler: ${error.message}`);
-            showPage('registration'); 
+            showPage('registration');
         }
     };
-    
+
     const handlePlanUpdate = async () => {
         const user = auth.currentUser;
         if (!user) return alert("Fehler: Nicht angemeldet.");
@@ -198,7 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const userDocRef = db.collection('users').doc(user.uid);
             const doc = await userDocRef.get();
             if (!doc.exists) throw new Error("Benutzerprofil nicht gefunden.");
-            
+
             const existingProfile = doc.data().profile;
             const newProfile = { ...existingProfile, ...updateUserData };
 
@@ -227,10 +232,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const handleLogout = () => auth.signOut();
 
     const displayResults = (data) => {
-        document.getElementById('calorieResult').textContent = data.calories || 'N/A';
-        planResultContainer.innerHTML = ''; 
+        // ENTFERNT: Kalorien-Logik entfernt
+        // document.getElementById('calorieResult').textContent = data.calories || 'N/A';
+        planResultContainer.innerHTML = '';
         if (data.weeklyPlan && data.weeklyPlan.length === 7) {
-            calorieCard.classList.remove('hidden'); 
+            // ENTFERNT: calorieCard wird nicht mehr angezeigt
+            // calorieCard.classList.remove('hidden');
             data.weeklyPlan.forEach((dayPlan, index) => {
                 const isWorkout = dayPlan.workoutTitle.toLowerCase() !== 'ruhetag';
                 const cellClass = isWorkout ? 'workout' : 'rest';
@@ -277,7 +284,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         showPage('dashboard');
                     } else if (userData.profile) {
                         showPage('dashboard');
-                        calorieCard.classList.add('hidden'); 
+                        // ENTFERNT: calorieCard wird nicht mehr versteckt
+                        // calorieCard.classList.add('hidden');
                         planResultContainer.innerHTML = `<div class="col-span-full flex flex-col items-center justify-center p-8"><div class="loader mb-4"></div><p class="text-lg font-semibold">Dein persönlicher Plan wird generiert...</p><p class="text-gray-400">Das kann bis zu 30 Sekunden dauern.</p></div>`;
                         const idToken = await user.getIdToken(true);
                         fetch('/.netlify/functions/generatePlan', {
@@ -341,7 +349,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (currentUpdateStep === 0) updatePrevBtn.disabled = true;
         }
     });
-    
+
     // Andere Listener
     loginForm.addEventListener('submit', handleLogin);
     logoutBtn.addEventListener('click', handleLogout);
@@ -380,5 +388,5 @@ document.addEventListener('DOMContentLoaded', () => {
     renderStep(currentRegStep, formStepsContainer);
     buildFormSteps(updatePlanSteps, updateFormStepsContainer, '_update');
     renderStep(currentUpdateStep, updateFormStepsContainer);
-    showPage('authLoading'); 
+    showPage('authLoading');
 });

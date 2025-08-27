@@ -10,11 +10,12 @@ if (!admin.apps.length) {
 }
 const db = admin.firestore();
 
-// --- PROMPT-ERSTELLUNG ---
+// --- PROMPT-ERSTELLUNG (AKTUALISIERT) ---
 const createPrompt = (userProfile) => {
+    // GEÄNDERT: Die Anforderung zur Kalorienberechnung wurde entfernt.
     return `
-        Erstelle einen detaillierten, personalisierten Trainingsplan und berechne den täglichen Kalorienbedarf mit genauer Rücksicht auf die angegebenen Daten des Nutzers.
-        Die Ausgabe MUSS ein valides JSON-Objekt sein, das genau dieser Struktur folgt: {"calories": "ca. XXXX kcal", "weeklyPlan": [...]}.
+        Erstelle einen detaillierten, personalisierten Trainingsplan mit genauer Rücksicht auf die angegebenen Daten des Nutzers.
+        Die Ausgabe MUSS ein valides JSON-Objekt sein, das genau dieser Struktur folgt: {"weeklyPlan": [...]}.
         "weeklyPlan" MUSS ein Array mit genau 7 Objekten sein, eines für jeden Tag von Montag bis Sonntag.
         Jedes Tagesobjekt MUSS diese Struktur haben: {"day": "TAG_NAME", "workoutTitle": "TITEL", "workoutDetails": "HTML_DETAILS"}.
         
@@ -65,7 +66,7 @@ exports.handler = async (event, context) => {
         if (!apiKey) throw new Error('GEMINI_API_KEY ist nicht konfiguriert.');
         
         const prompt = createPrompt(userProfile);
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-1.5:generateContent?key=${apiKey}`;
         const payload = {
             contents: [{ role: "user", parts: [{ text: prompt }] }],
             generationConfig: { responseMimeType: "application/json" }
@@ -84,14 +85,10 @@ exports.handler = async (event, context) => {
 
         const result = await apiResponse.json();
 
-        // --- KORREKTUR: Prüfen, ob die KI-Antwort gültig ist ---
         if (!result.candidates || !result.candidates[0] || !result.candidates[0].content) {
-            // Wenn die Antwort ungültig ist, logge die gesamte Antwort für die Fehlersuche
             console.error("Ungültige API-Antwort von Gemini:", JSON.stringify(result));
-            // Gib eine klare Fehlermeldung zurück
             throw new Error("Die KI hat keine gültigen Daten zurückgegeben. Dies liegt oft an den Sicherheitseinstellungen der API.");
         }
-        // --- ENDE DER KORREKTUR ---
 
         const rawJson = result.candidates[0].content.parts[0].text;
         const planData = JSON.parse(rawJson);

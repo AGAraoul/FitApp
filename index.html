@@ -7,21 +7,28 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- HINZUGEFÜGT: Modernere Schriftarten für Titel und Text -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="antialiased">
 
-    <div id="app" class="min-h-screen flex flex-col items-center justify-center p-4">
+    <!-- GEÄNDERT: Die Haupt-App-Struktur wurde vereinfacht für das Vollbild-Layout -->
+    <div id="app">
 
         <!-- Ladeanzeige beim Start -->
-        <div id="authLoadingPage" class="page text-center">
+        <div id="authLoadingPage" class="page auth-container">
             <div class="loader"></div>
         </div>
 
         <!-- Seite 1: Registrierung (Multi-Step) -->
-        <div id="registrationPage" class="page w-full max-w-2xl">
-            <div class="card p-6 sm:p-8 shadow-lg">
+        <div id="registrationPage" class="page auth-container">
+            <!-- HINZUGEFÜGT: Branding-Header -->
+            <div class="auth-header">
+                <h1 class="app-title">BeFit</h1>
+                <p class="app-tagline">Dein ultimativer Personal-Trainer für maßgeschneiderte Fitnesspläne.</p>
+            </div>
+            <div class="card w-full max-w-2xl p-6 sm:p-8 shadow-lg">
                 <div class="mb-8">
                     <div class="w-full progress-bar-bg rounded-full h-2.5">
                         <div id="progressBar" class="progress-bar-fill h-2.5 rounded-full" style="width: 0%"></div>
@@ -35,7 +42,7 @@
                     <button id="nextBtn" class="btn-primary">Weiter</button>
                 </div>
                  <div class="text-center mt-6">
-                    <p class="text-gray-400">Schon ein Konto? 
+                    <p class="text-gray-400">Schon ein Konto?
                         <button id="showLoginBtn" class="font-semibold text-blue-400 hover:underline">Hier anmelden</button>
                     </p>
                 </div>
@@ -43,8 +50,13 @@
         </div>
 
         <!-- Seite 2: Login -->
-        <div id="loginPage" class="page w-full max-w-md">
-            <div class="card p-8 shadow-lg">
+        <div id="loginPage" class="page auth-container">
+             <!-- HINZUGEFÜGT: Branding-Header -->
+            <div class="auth-header">
+                <h1 class="app-title">BeFit</h1>
+                <p class="app-tagline">Dein ultimativer Personal-Trainer für maßgeschneiderte Fitnesspläne.</p>
+            </div>
+            <div class="card w-full max-w-md p-8 shadow-lg">
                 <h2 class="text-3xl font-bold text-center mb-4">Willkommen zurück!</h2>
                 <form id="loginForm" class="space-y-6">
                     <div>
@@ -58,15 +70,15 @@
                     <button type="submit" class="btn-primary w-full !mt-8">Anmelden</button>
                 </form>
                 <div class="text-center mt-6">
-                    <p class="text-gray-400">Noch kein Konto? 
+                    <p class="text-gray-400">Noch kein Konto?
                         <button id="showRegisterBtn" class="font-semibold text-blue-400 hover:underline">Jetzt registrieren</button>
                     </p>
                 </div>
             </div>
         </div>
-        
+
         <!-- Ladeseite für die Plan-Erstellung -->
-        <div id="planCreationLoadingPage" class="page text-center">
+        <div id="planCreationLoadingPage" class="page auth-container">
              <div class="card p-8 shadow-lg flex flex-col items-center">
                 <div class="loader mb-4"></div>
                 <h2 class="text-xl font-semibold">Wir erstellen deinen persönlichen Plan...</h2>
@@ -75,23 +87,16 @@
         </div>
 
         <!-- Dashboard -->
-        <div id="dashboardPage" class="page dashboard-background w-full h-full">
+        <!-- GEÄNDERT: Die Klassen wurden für das neue Vollbild-Layout angepasst -->
+        <div id="dashboardPage" class="page dashboard-background">
             <div class="dashboard-container">
                  <header class="dashboard-header">
                     <div class="user-greeting">
                         <h2 class="text-3xl sm:text-4xl font-bold text-white">Willkommen, <span id="usernameDisplay" class="text-cyan-300"></span>!</h2>
                         <p class="text-gray-400 mt-1">Dein persönlicher Wochenplan wartet auf dich.</p>
                     </div>
+                    <!-- ENTFERNT: Die Kalorien-Karte wurde entfernt -->
                     <div class="user-actions">
-                        <div id="calorieCard" class="stat-card hidden">
-                            <div class="stat-icon">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                            </div>
-                            <div>
-                                <h3 class="text-sm font-medium text-gray-400">Tägl. Kalorienbedarf</h3>
-                                <p id="calorieResult" class="text-xl font-bold text-white"></p>
-                            </div>
-                        </div>
                         <button id="newPlanBtn" class="btn-secondary">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
                             Neuer Plan
@@ -107,8 +112,8 @@
         </div>
 
         <!-- Plan aktualisieren (Multi-Step) -->
-        <div id="updatePlanPage" class="page w-full max-w-2xl">
-            <div class="card p-6 sm:p-8 shadow-lg">
+        <div id="updatePlanPage" class="page auth-container">
+            <div class="card w-full max-w-2xl p-6 sm:p-8 shadow-lg">
                 <div class="mb-8">
                     <div class="w-full progress-bar-bg rounded-full h-2.5">
                         <div id="updateProgressBar" class="progress-bar-fill h-2.5 rounded-full" style="width: 0%"></div>

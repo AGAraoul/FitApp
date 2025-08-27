@@ -1,10 +1,22 @@
 /* Benutzerdefinierter Stil für ein modernes Erscheinungsbild */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden; /* Verhindert Scrollen bei Vollbild-Layouts */
+}
+
 body {
     font-family: 'Inter', sans-serif;
     background-color: #111827; /* Dunkelgrauer Hintergrund */
     color: #F9FAFB; /* Heller Text */
-    overflow: hidden; /* Verhindert Scrollen bei Vollbild-Layouts */
 }
+
+#app {
+    height: 100%;
+    width: 100%;
+}
+
 .card {
     background-color: #1F2937; /* Etwas helleres Grau für Karten */
     border: 1px solid #374151;
@@ -46,12 +58,47 @@ body {
 }
 .page {
     display: none;
+    width: 100%;
+    height: 100%;
     animation: fadeIn 0.6s ease-in-out;
 }
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* --- NEU: Stile für Login/Registrierungs-Container --- */
+.auth-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    overflow-y: auto;
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    animation: fadeIn 1s ease-out;
+}
+
+.app-title {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 900;
+    font-size: 3.5rem; /* 56px */
+    letter-spacing: -0.05em;
+    color: #ffffff;
+}
+
+.app-tagline {
+    font-size: 1.125rem; /* 18px */
+    color: #9CA3AF; /* gray-400 */
+    margin-top: 0.5rem;
+    max-width: 400px;
+}
+
+
 .loader {
     border: 4px solid #374151;
     border-left-color: #3B82F6;
@@ -67,7 +114,7 @@ body {
 /* Stile für Multi-Step Formular */
 #form-steps, #update-form-steps {
     position: relative;
-    min-height: 420px; 
+    min-height: 420px;
 }
 .form-step {
     width: 100%;
@@ -93,26 +140,23 @@ body {
     opacity: 0;
 }
 
-/* --- ÜBERARBEITET: Stile für Vollbild-Dashboard & modernes Design --- */
-#app {
-    width: 100%;
-}
+/* --- ÜBERARBEITET: Stile für Vollbild-Dashboard & Responsivität --- */
 .dashboard-background {
     width: 100%;
-    height: 100vh;
+    height: 100%;
     background: linear-gradient(135deg, #111827 0%, #172033 100%);
-    padding: 0;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-direction: column;
+    overflow-y: auto; /* Scrollen auf dem Dashboard erlauben */
 }
 .dashboard-container {
     width: 100%;
-    height: 100%;
     max-width: 1400px;
-    margin: auto;
+    margin: 0 auto;
+    padding: 1.5rem;
     display: flex;
     flex-direction: column;
+    flex-grow: 1;
 }
 .dashboard-header {
     display: flex;
@@ -130,24 +174,7 @@ body {
 }
 .user-greeting h2 { line-height: 1.2; }
 .user-actions { display: flex; align-items: center; gap: 1rem; }
-.stat-card {
-    background-color: rgba(31, 41, 55, 0.5);
-    border: 1px solid #374151;
-    border-radius: 0.75rem;
-    padding: 0.75rem 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-.stat-icon {
-    background-color: rgba(22, 163, 74, 0.2);
-    color: #4ADE80;
-    border-radius: 50%;
-    padding: 0.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
+
 .btn-secondary, .btn-danger {
     display: flex;
     align-items: center;
@@ -156,6 +183,7 @@ body {
     border-radius: 0.5rem;
     border: 1px solid transparent;
     transition: all 0.2s ease;
+    white-space: nowrap;
 }
 .btn-secondary {
     background-color: #374151;
@@ -172,7 +200,8 @@ body {
 .plan-grid {
     flex-grow: 1;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    /* Responsive Grid-Spalten */
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 1.5rem;
     padding-top: 1.5rem;
 }
@@ -249,12 +278,13 @@ body {
     visibility: hidden;
     transition: opacity 0.3s ease, visibility 0.3s ease;
     z-index: 50;
+    padding: 1rem;
 }
 .modal-container {
     background-color: #1F2937;
     border-radius: 1rem;
     padding: 2rem;
-    width: 90%;
+    width: 100%;
     max-width: 600px;
     max-height: 90vh;
     overflow-y: auto;
@@ -282,4 +312,40 @@ body {
     background-color: #3B82F6;
     border-color: #2563EB;
     color: white;
+}
+
+/* --- NEU: Media Queries für Responsivität --- */
+
+/* Tablets und kleine Desktops */
+@media (max-width: 1024px) {
+    .plan-grid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+}
+
+/* Mobilgeräte */
+@media (max-width: 768px) {
+    .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.5rem;
+    }
+    .user-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+    .plan-grid {
+        /* Stellt sicher, dass auf sehr kleinen Bildschirmen die Kacheln groß genug sind */
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
+    .app-title {
+        font-size: 2.5rem; /* 40px */
+    }
+    .app-tagline {
+        font-size: 1rem; /* 16px */
+    }
+    .auth-container {
+        justify-content: flex-start;
+        padding-top: 3rem;
+    }
 }
