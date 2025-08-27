@@ -23,6 +23,7 @@ body {
     border-radius: 1rem; /* Abgerundete Ecken */
     transition: all 0.3s ease-in-out;
     width: 100%; /* Stellt sicher, dass die Karte die Breite des max-width Containers ausfüllt */
+    overflow: hidden; /* Wichtig für die neuen Animationen */
 }
 .btn-primary {
     background-color: #3B82F6; /* Blauer Akzent */
@@ -356,8 +357,58 @@ body {
     transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
 }
 
+.fade-out-left { animation: fadeOutLeft 0.4s ease-in-out forwards; }
+@keyframes fadeOutLeft {
+    to { opacity: 0; transform: translateX(-20px); }
+}
+.fade-in-right { animation: fadeInRight 0.4s ease-in-out forwards; }
+@keyframes fadeInRight {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+.fade-out-right { animation: fadeOutRight 0.4s ease-in-out forwards; }
+@keyframes fadeOutRight {
+    to { opacity: 0; transform: translateX(20px); }
+}
+.fade-in-left { animation: fadeInLeft 0.4s ease-in-out forwards; }
+@keyframes fadeInLeft {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+
 /* NEU: Stil für deaktivierte Formular-Abschnitte */
+[data-dependency] {
+    transition: opacity 0.3s ease-in-out;
+}
 [data-dependency].disabled-look {
-    opacity: 0.5;
+    opacity: 0.4;
     pointer-events: none;
+}
+
+/* NEU: Angepasste Stile für die Checkbox */
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0;
+}
+.custom-checkbox {
+    height: 1.25rem;
+    width: 1.25rem;
+    flex-shrink: 0;
+    border-radius: 0.25rem;
+    border-color: #4B5563;
+    background-color: #374151;
+    color: #3B82F6;
+    transition: all 0.2s ease;
+}
+.custom-checkbox:focus {
+    outline: none;
+    /* KORREKTUR: Ersetzt die ungültigen 'ring'-Eigenschaften durch eine standardkonforme 'box-shadow' */
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+}
+.custom-checkbox-label {
+    margin-left: 0.75rem;
+    font-size: 1rem; /* Größere Schrift */
+    color: #D1D5DB; /* Helleres Grau */
 }

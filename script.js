@@ -84,8 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             title: "Deine sportlichen Ziele",
             questions: [
-                // NEU: Checkbox für allgemeine Fitness
-                { id: 'noSpecificSport', label: 'Ich möchte an meiner allgemeinen Fitness arbeiten (kein sportartspezifischer Plan).', type: 'checkbox' },
+                { id: 'noSpecificSport', label: 'Ich möchte an meiner allgemeinen Fitness arbeiten.', type: 'checkbox' },
                 { id: 'sport', label: 'Für welche Hauptsportart möchtest du einen Plan?', type: 'text', placeholder: 'z.B. Bodybuilding, Fußball' },
                 { id: 'sportDays', label: 'An welchen Tagen trainierst du diese Sportart bereits?', type: 'multiselect_days' },
                 { id: 'fitnessLevel', label: 'Auf welchem Fitnessniveau befindest du dich?', type: 'select', options: ['Anfänger', 'Fortgeschritten', 'Fit', 'Top Fit'] },
@@ -107,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     });
 
-    // --- Allgemeine Multi-Step Formular Funktionen ---
+    // --- Allgemeine Multi-Step Formular Funktionen (ÜBERARBEITET) ---
     const buildFormSteps = (steps, container, idPrefix = '') => {
         container.innerHTML = '';
         steps.forEach((step) => {
@@ -122,18 +121,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     case 'select': inputHtml = `<select id="${questionId}" class="input-field" required>${q.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}</select>`; break;
                     case 'select_with_ai': inputHtml = `<div class="flex flex-col sm:flex-row items-center gap-4"><select id="${questionId}" class="input-field w-full" required>${q.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}</select><button type="button" class="ai-recommend-btn btn-primary bg-indigo-600 hover:bg-indigo-500 w-full sm:w-auto whitespace-nowrap px-4 py-3">KI-Empfehlung</button></div>`; break;
                     case 'multiselect_days': inputHtml = `<div id="${questionId}" class="grid grid-cols-2 sm:grid-cols-4 gap-3">${daysOfWeek.map(day => `<div><input type="checkbox" id="day-${day}${idPrefix}" name="sportDays${idPrefix}" value="${day}" class="hidden day-checkbox"><label for="day-${day}${idPrefix}" class="day-checkbox-label">${day}</label></div>`).join('')}</div>`; break;
-                    // NEU: HTML für die Checkbox
-                    case 'checkbox': inputHtml = `<div class="flex items-center"><input id="${questionId}" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 bg-gray-700 border-gray-600"><label for="${questionId}" class="ml-3 block text-sm text-gray-300">${q.label}</label></div>`; break;
+                    case 'checkbox': inputHtml = `<div class="checkbox-container"><input id="${questionId}" type="checkbox" class="custom-checkbox"><label for="${questionId}" class="custom-checkbox-label">${q.label}</label></div>`; break;
                     default: inputHtml = `<input type="${q.type}" id="${questionId}" class="input-field" placeholder="${q.placeholder || ''}" required>`;
                 }
-                // NEU: Wrapper für Sportart und Trainingstage, um sie gemeinsam zu steuern
-                if (q.id === 'sport' || q.id === 'sportDays') {
-                     stepHtml += `<div data-dependency="noSpecificSport${idPrefix}">${q.id === 'sport' ? `<label for="${questionId}" class="block mb-2 text-sm font-medium text-gray-300">${q.label}</label>` : ''}${inputHtml}</div>`;
+                
+                // KORREKTUR: Logik zur Vermeidung doppelter Labels
+                let questionWrapper = '';
+                if (q.type === 'checkbox') {
+                    questionWrapper = inputHtml; // Checkbox hat bereits ein Label
+                } else if (q.id === 'sport' || q.id === 'sportDays') {
+                    questionWrapper = `<div data-dependency="noSpecificSport${idPrefix}"><label for="${questionId}" class="block mb-2 text-sm font-medium text-gray-300">${q.label}</label>${inputHtml}</div>`;
                 } else {
-                     stepHtml += `<div><label for="${questionId}" class="block mb-2 text-sm font-medium text-gray-300">${q.label}</label>${inputHtml}</div>`;
+                    questionWrapper = `<div><label for="${questionId}" class="block mb-2 text-sm font-medium text-gray-300">${q.label}</label>${inputHtml}</div>`;
                 }
+                stepHtml += questionWrapper;
             });
-            stepElement.innerHTML = stepHtml.replace(/<label.*?>.*?<\/label>/, (match, offset) => stepHtml.indexOf(match) === offset ? match : ''); // Remove duplicate labels
+            stepElement.innerHTML = stepHtml;
             container.appendChild(stepElement);
         });
     };
@@ -165,7 +168,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return true;
     };
 
-    // ÜBERARBEITET: Speichert die Daten unter Berücksichtigung der Checkbox
     const saveStepData = (stepIndex, steps, dataObject, idPrefix = '') => {
         const noSpecificSportCheckbox = document.getElementById(`noSpecificSport${idPrefix}`);
         const isGeneralFitness = noSpecificSportCheckbox && noSpecificSportCheckbox.checked;
@@ -256,7 +258,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const handleLogout = () => auth.signOut();
+    // KORREKTUR: Stellt sicher, dass nach dem Logout immer die Login-Seite angezeigt wird.
+    const handleLogout = () => {
+        auth.signOut().then(() => {
+            showPage('login');
+        });
+    };
 
     const displayResults = (data) => {
         planResultContainer.innerHTML = '';
@@ -323,19 +330,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // VERBESSERTE ANIMATION
     startRegistrationProcessBtn.addEventListener('click', () => {
-        registrationStartView.style.transform = 'translateX(-100%)';
-        registrationStartView.style.opacity = '0';
-        registrationFormWrapper.style.display = 'block';
-        registrationFormWrapper.style.transform = 'translateX(100%)';
-        registrationFormWrapper.style.opacity = '0';
-        setTimeout(() => {
-            registrationFormWrapper.style.transform = 'translateX(0)';
-            registrationFormWrapper.style.opacity = '1';
-        }, 10);
+        const card = registrationStartView.closest('.card');
+        card.style.minHeight = card.offsetHeight + 'px'; // Höhe fixieren, um Springen zu verhindern
+
+        registrationStartView.classList.add('fade-out-left');
+        
         setTimeout(() => {
             registrationStartView.style.display = 'none';
+            registrationFormWrapper.style.display = 'block';
+            registrationFormWrapper.classList.add('fade-in-right');
+            card.style.minHeight = ''; // Höhe wieder freigeben
         }, 400);
+
         currentRegStep = 0;
         renderStep(currentRegStep, formStepsContainer);
         progressBar.style.width = '0%';
@@ -355,6 +363,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // VERBESSERTE ANIMATION
     prevBtn.addEventListener('click', () => {
         if (currentRegStep > 0) {
             currentRegStep--;
@@ -362,17 +371,18 @@ document.addEventListener('DOMContentLoaded', () => {
             progressBar.style.width = `${(currentRegStep / (registrationSteps.length - 1)) * 100}%`;
             nextBtn.textContent = 'Weiter';
         } else {
-            registrationFormWrapper.style.transform = 'translateX(100%)';
-            registrationFormWrapper.style.opacity = '0';
-            registrationStartView.style.display = 'block';
-            registrationStartView.style.transform = 'translateX(-100%)';
-            registrationStartView.style.opacity = '0';
-            setTimeout(() => {
-                registrationStartView.style.transform = 'translateX(0)';
-                registrationStartView.style.opacity = '1';
-            }, 10);
+            const card = registrationFormWrapper.closest('.card');
+            card.style.minHeight = card.offsetHeight + 'px';
+
+            registrationFormWrapper.classList.remove('fade-in-right');
+            registrationFormWrapper.classList.add('fade-out-right');
+
             setTimeout(() => {
                 registrationFormWrapper.style.display = 'none';
+                registrationStartView.style.display = 'block';
+                registrationStartView.classList.remove('fade-out-left');
+                registrationStartView.classList.add('fade-in-left');
+                card.style.minHeight = '';
             }, 400);
         }
     });
@@ -406,10 +416,9 @@ document.addEventListener('DOMContentLoaded', () => {
     showRegisterBtn.addEventListener('click', () => {
         showPage('registration');
         registrationFormWrapper.style.display = 'none';
-        registrationFormWrapper.style.transform = 'translateX(100%)';
+        registrationFormWrapper.classList.remove('fade-in-right', 'fade-out-right');
         registrationStartView.style.display = 'block';
-        registrationStartView.style.transform = 'translateX(0)';
-        registrationStartView.style.opacity = '1';
+        registrationStartView.classList.remove('fade-out-left', 'fade-in-left');
     });
     newPlanBtn.addEventListener('click', () => {
         currentUpdateStep = 0;
@@ -426,22 +435,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (clickedDay) openModal(clickedDay.dataset.title, clickedDay.dataset.details);
     });
     
-    // NEU: Event-Delegation für die Checkbox-Logik
     document.body.addEventListener('change', (e) => {
         const idPrefix = e.target.id.includes('_update') ? '_update' : '';
         if (e.target.id === `noSpecificSport${idPrefix}`) {
             const isChecked = e.target.checked;
             const sportInput = document.getElementById(`sport${idPrefix}`);
             const sportDaysContainer = document.getElementById(`sportDays${idPrefix}`);
-            const dependentElements = [sportInput, sportDaysContainer];
-
-            dependentElements.forEach(el => {
-                if (el) {
-                    el.closest('[data-dependency]').classList.toggle('disabled-look', isChecked);
-                    el.querySelectorAll('input, select').forEach(input => input.disabled = isChecked);
-                    if(sportInput) sportInput.required = !isChecked;
-                }
-            });
+            
+            if (sportInput) {
+                sportInput.closest('[data-dependency]').classList.toggle('disabled-look', isChecked);
+                sportInput.disabled = isChecked;
+                sportInput.required = !isChecked;
+            }
+            if (sportDaysContainer) {
+                sportDaysContainer.closest('[data-dependency]').classList.toggle('disabled-look', isChecked);
+                sportDaysContainer.querySelectorAll('input').forEach(input => input.disabled = isChecked);
+            }
         }
     });
 
