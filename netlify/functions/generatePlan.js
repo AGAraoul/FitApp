@@ -66,7 +66,7 @@ const createPrompt = (userProfile, weekNumber, totalWeeks, startDayName, numberO
     `;
 };
 
-// --- NETLIFY FUNCTION HANDLER (KORRIGIERT) ---
+// --- NETLIFY FUNCTION HANDLER (FINAL FIX) ---
 exports.handler = async (event, context) => {
     const firebaseServiceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
     const geminiApiKey = process.env.GEMINI_API_KEY;
@@ -109,17 +109,19 @@ exports.handler = async (event, context) => {
         const weekSegments = [];
         let currentStartDate = new Date(startDate);
 
-        // Den gesamten Zeitraum in logische Wochenabschnitte unterteilen
         while (currentStartDate <= endDate) {
             const weekStartDate = new Date(currentStartDate);
+            let weekEndDate = new Date(weekStartDate);
+
             // getDay(): Sonntag = 0, Montag = 1, ..., Samstag = 6
             const dayOfWeek = weekStartDate.getDay();
-            
-            let weekEndDate = new Date(weekStartDate);
-            
-            // Tage bis zum nächsten Sonntag berechnen (Sonntag ist Tag 0)
-            const daysUntilSunday = (7 - dayOfWeek) % 7;
-            weekEndDate.setDate(weekStartDate.getDate() + daysUntilSunday); 
+
+            if (dayOfWeek !== 1 || weekSegments.length === 0) { // Wenn es die erste Woche ist ODER die Woche nicht an einem Montag beginnt
+                 const daysUntilSunday = dayOfWeek === 0 ? 0 : 7 - dayOfWeek;
+                 weekEndDate.setDate(weekStartDate.getDate() + daysUntilSunday);
+            } else { // Für alle vollen Wochen, die an einem Montag starten
+                weekEndDate.setDate(weekStartDate.getDate() + 6);
+            }
             
             if (weekEndDate > endDate) {
                 weekEndDate = new Date(endDate);
@@ -127,7 +129,6 @@ exports.handler = async (event, context) => {
 
             weekSegments.push({ start: weekStartDate, end: weekEndDate });
 
-            // Das Startdatum für den nächsten Abschnitt auf den Montag nach dem Ende des aktuellen setzen.
             currentStartDate = new Date(weekEndDate);
             currentStartDate.setDate(currentStartDate.getDate() + 1);
         }
@@ -142,7 +143,6 @@ exports.handler = async (event, context) => {
             const startDayIndex = weekStartDate.getDay();
             const startDayName = daysOfWeek[startDayIndex];
             
-            // Anzahl der Tage in diesem spezifischen Wochenabschnitt berechnen
             const numberOfDays = Math.round((segment.end.getTime() - segment.start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
             
             if (numberOfDays <= 0) continue;
@@ -170,7 +170,6 @@ exports.handler = async (event, context) => {
             if (result.candidates && result.candidates[0] && result.candidates[0].content) {
                 const rawJson = result.candidates[0].content.parts[0].text;
                 const planData = JSON.parse(rawJson);
-                // Als Schlüssel das Startdatum des Segments verwenden
                 allWeeklyPlans[weekStartDate.toISOString().split('T')[0]] = planData;
             }
         }
