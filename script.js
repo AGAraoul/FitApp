@@ -173,8 +173,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const showPage = (pageName) => {
         Object.values(pages).forEach(page => page.style.display = 'none');
         if (pages[pageName]) {
-            // GEÄNDERT: Statt 'block' wird 'flex' für die Container verwendet, um das Layout zu steuern
-            pages[pageName].style.display = (pageName.includes('auth') || pageName.includes('Loading') || pageName.includes('update')) ? 'flex' : 'block';
+            // ERSETZT: Alte, fehleranfällige Logik
+            // pages[pageName].style.display = (pageName.includes('auth') || pageName.includes('Loading') || pageName.includes('update')) ? 'flex' : 'block';
+            
+            // NEU: Robuste Prüfung, ob der Container zentriert werden soll.
+            // Dies stellt sicher, dass alle aktuellen und zukünftigen "auth"-Seiten korrekt dargestellt werden.
+            if (pages[pageName].classList.contains('auth-container')) {
+                pages[pageName].style.display = 'flex';
+            } else {
+                pages[pageName].style.display = 'block';
+            }
         }
     };
 
