@@ -10,6 +10,8 @@ const db = () => admin.firestore();
 const createPrompt = (userProfile) => {
     // GEÄNDERT: Die Anforderung zur Kalorienberechnung wurde entfernt.
     return `
+        Du bist ein Sportart spezifischer Profi Coach. Je nach ausgewählter Sportart wechselst du deine Professionalität.
+        Sollte der Nutzer einen Trainingsplan für Fusßball haben wollen, erstellst du einen mit Übungen für Fußballer. Für Bodybuilder einen Bodybuilding Plan usw.
         Erstelle einen detaillierten, personalisierten Trainingsplan mit genauer Rücksicht auf die angegebenen Daten des Nutzers.
         Die Ausgabe MUSS ein valides JSON-Objekt sein, das genau dieser Struktur folgt: {"weeklyPlan": [...]}.
         "weeklyPlan" MUSS ein Array mit genau 7 Objekten sein, eines für jeden Tag von Montag bis Sonntag.

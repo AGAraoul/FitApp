@@ -79,7 +79,10 @@ body {
 }
 
 .auth-header {
-    /* GEÄNDERT: text-align: left entfernt, da der Wrapper zentriert */
+    /* KORREKTUR: Flexbox hinzugefügt, um Titel und Slogan korrekt zu zentrieren. */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     margin-bottom: 2rem;
     animation: fadeIn 1s ease-out;
 }
