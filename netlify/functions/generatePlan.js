@@ -66,7 +66,7 @@ const createPrompt = (userProfile, weekNumber, totalWeeks, startDayName, numberO
     `;
 };
 
-// --- NETLIFY FUNCTION HANDLER (ÜBERARBEITET) ---
+// --- NETLIFY FUNCTION HANDLER (KORRIGIERT) ---
 exports.handler = async (event, context) => {
     const firebaseServiceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
     const geminiApiKey = process.env.GEMINI_API_KEY;
@@ -112,12 +112,14 @@ exports.handler = async (event, context) => {
         // Den gesamten Zeitraum in logische Wochenabschnitte unterteilen
         while (currentStartDate <= endDate) {
             const weekStartDate = new Date(currentStartDate);
-            // getDay() ist 0 für Sonntag. Wir rechnen um, sodass Montag = 1 und Sonntag = 7 ist.
-            const dayOfWeek = weekStartDate.getDay() === 0 ? 7 : weekStartDate.getDay();
+            // getDay(): Sonntag = 0, Montag = 1, ..., Samstag = 6
+            const dayOfWeek = weekStartDate.getDay();
             
             let weekEndDate = new Date(weekStartDate);
-            // Das Enddatum ist immer der nächste Sonntag (Tag 7)
-            weekEndDate.setDate(weekStartDate.getDate() + (7 - dayOfWeek)); 
+            
+            // Tage bis zum nächsten Sonntag berechnen (Sonntag ist Tag 0)
+            const daysUntilSunday = (7 - dayOfWeek) % 7;
+            weekEndDate.setDate(weekStartDate.getDate() + daysUntilSunday); 
             
             if (weekEndDate > endDate) {
                 weekEndDate = new Date(endDate);
@@ -141,7 +143,9 @@ exports.handler = async (event, context) => {
             const startDayName = daysOfWeek[startDayIndex];
             
             // Anzahl der Tage in diesem spezifischen Wochenabschnitt berechnen
-            const numberOfDays = Math.round((segment.end - segment.start) / (1000 * 60 * 60 * 24)) + 1;
+            const numberOfDays = Math.round((segment.end.getTime() - segment.start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+            
+            if (numberOfDays <= 0) continue;
 
             const prompt = createPrompt(userProfile, i + 1, totalWeeks, startDayName, numberOfDays);
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
