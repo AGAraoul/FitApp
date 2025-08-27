@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
         projectId: "befit-personaltrainer",
         storageBucket: "befit-personaltrainer.appspot.com",
         messagingSenderId: "1075828940079",
-        appId: "1:1075828940079:web:afb36b6e45217482aa55da",
+        appId: "1:1075828940079:web:afb6b6e45217482aa55da",
         measurementId: "G-B5SS4JMZEH"
     };
 
@@ -93,14 +93,8 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             title: "Dein Trainingspensum",
             questions: [
-                { id: 'frequency', label: 'Wie oft möchtest du im Fitnessstudio trainieren?', type: 'select_with_ai', options: ['1-2 mal', '3-4 mal', '5-6 mal'] },
-            ]
-        },
-        // NEUER SCHRITT
-        {
-            title: "Wähle deinen Trainingszeitraum",
-            questions: [
-                { id: 'dateRange', type: 'calendar' }
+                { id: 'frequency', label: 'Wie oft möchtest du ZUSÄTZLICH im Fitnessstudio trainieren?', type: 'select_with_ai', options: ['1-2 mal', '3-4 mal', '5-6 mal'] },
+                { id: 'goal', label: 'Was ist dein Hauptziel?', type: 'select', options: ['Abnehmen', 'Zunehmen (Muskelaufbau)', 'Gewicht halten'] }
             ]
         }
     ];
@@ -128,13 +122,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     case 'select_with_ai': inputHtml = `<div class="flex flex-col sm:flex-row items-center gap-4"><select id="${questionId}" class="input-field w-full" required>${q.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}</select><button type="button" class="ai-recommend-btn btn-primary bg-indigo-600 hover:bg-indigo-500 w-full sm:w-auto whitespace-nowrap px-4 py-3">KI-Empfehlung</button></div>`; break;
                     case 'multiselect_days': inputHtml = `<div id="${questionId}" class="grid grid-cols-2 sm:grid-cols-4 gap-3">${daysOfWeek.map(day => `<div><input type="checkbox" id="day-${day}${idPrefix}" name="sportDays${idPrefix}" value="${day}" class="hidden day-checkbox"><label for="day-${day}${idPrefix}" class="day-checkbox-label">${day}</label></div>`).join('')}</div>`; break;
                     case 'checkbox': inputHtml = `<div class="checkbox-container"><input id="${questionId}" type="checkbox" class="custom-checkbox"><label for="${questionId}" class="custom-checkbox-label">${q.label}</label></div>`; break;
-                    // NEU: Kalender-Container
-                    case 'calendar': inputHtml = `<div id="calendar-wrapper${idPrefix}" class="calendar-container"></div><p id="selection-info${idPrefix}" class="selection-info-text">Wähle einen Starttag.</p>`; break;
                     default: inputHtml = `<input type="${q.type}" id="${questionId}" class="input-field" placeholder="${q.placeholder || ''}" required>`;
                 }
                 
                 let questionWrapper = '';
-                if (q.type === 'checkbox' || q.type === 'calendar') {
+                if (q.type === 'checkbox') {
                     questionWrapper = inputHtml; 
                 } else if (q.id === 'sport' || q.id === 'sportDays') {
                     questionWrapper = `<div data-dependency="noSpecificSport${idPrefix}"><label for="${questionId}" class="block mb-2 text-sm font-medium text-gray-300">${q.label}</label>${inputHtml}</div>`;
@@ -157,21 +149,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    const validateStep = (stepIndex, steps, dataObject, idPrefix = '') => {
+    const validateStep = (stepIndex, steps, idPrefix = '') => {
         for (const question of steps[stepIndex].questions) {
-            if (question.type === 'calendar') {
-                if (!dataObject.startDate || !dataObject.endDate) {
-                    alert('Bitte wähle einen Start- und Endzeitpunkt für deinen Plan aus.');
-                    return false;
-                }
-            }
             const inputElement = document.getElementById(`${question.id}${idPrefix}`);
             if (inputElement && inputElement.hasAttribute('required') && !inputElement.value) {
                 alert(`Bitte fülle das Feld "${question.label}" aus.`);
                 return false;
             }
             if (question.id === 'passwordConfirm') {
-                const password = document.getElementById('password' + idPrefix).value;
+                const password = document.getElementById('password').value;
                 if (inputElement.value !== password) {
                     alert('Die Passwörter stimmen nicht überein.');
                     return false;
@@ -186,7 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const isGeneralFitness = noSpecificSportCheckbox && noSpecificSportCheckbox.checked;
 
         steps[stepIndex].questions.forEach(q => {
-            if (q.id === 'passwordConfirm' || q.id === 'noSpecificSport' || q.type === 'calendar') return;
+            if (q.id === 'passwordConfirm' || q.id === 'noSpecificSport') return;
 
             if (isGeneralFitness && (q.id === 'sport' || q.id === 'sportDays')) {
                 return; 
@@ -228,12 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const user = userCredential.user;
             await db.collection('users').doc(user.uid).set({
                 profile: userProfile,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                plan: {
-                    startDate: regUserData.startDate,
-                    endDate: regUserData.endDate,
-                    weeklyPlans: {}
-                }
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
         } catch (error) {
             console.error("Registrierungsfehler:", error);
@@ -262,11 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             await userDocRef.update({
                 profile: newProfile,
-                plan: {
-                    startDate: updateUserData.startDate,
-                    endDate: updateUserData.endDate,
-                    weeklyPlans: {}
-                }
+                plan: firebase.firestore.FieldValue.delete()
             });
         } catch (error) {
             console.error("Fehler beim Aktualisieren des Plans:", error);
@@ -292,72 +269,32 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // NEU: Dashboard-Anzeige komplett überarbeitet
-    const displayResults = (userData) => {
+    const displayResults = (data) => {
         planResultContainer.innerHTML = '';
-        if (!userData.plan || !userData.plan.weeklyPlans) {
-            planResultContainer.innerHTML = '<p>Kein Plan gefunden oder Plan wird noch erstellt.</p>';
-            return;
-        }
-
-        const weeklyPlans = userData.plan.weeklyPlans;
-        const sortedWeeks = Object.keys(weeklyPlans).sort();
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        sortedWeeks.forEach((weekStartDateStr, index) => {
-            const weekStartDate = new Date(weekStartDateStr);
-            const weekEndDate = new Date(weekStartDate);
-            weekEndDate.setDate(weekEndDate.getDate() + 6);
-
-            const isCurrentWeek = today >= weekStartDate && today <= weekEndDate;
-            const weekData = weeklyPlans[weekStartDateStr];
-
-            const weekSection = document.createElement('div');
-            weekSection.className = 'week-plan-section';
-            if (isCurrentWeek) {
-                weekSection.classList.add('open');
-            }
-
-            const formatDate = (date) => `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-            
-            let headerHTML = `
-                <div class="week-header">
-                    <div class="flex items-center">
-                        <h3>Trainingswoche ${index + 1}</h3>
-                        ${isCurrentWeek ? '<span class="current-week-badge">Aktuell</span>' : ''}
-                    </div>
-                    <div class="flex items-center">
-                         <span class="date-range">${formatDate(weekStartDate)} - ${formatDate(weekEndDate)}</span>
-                         <button class="toggle-plan-btn ml-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
-                         </button>
-                    </div>
-                </div>
-                <div class="plan-grid-wrapper">
-                    <div class="plan-grid">
-            `;
-
-            weekData.weeklyPlan.forEach((dayPlan) => {
+        if (data.weeklyPlan && data.weeklyPlan.length === 7) {
+            data.weeklyPlan.forEach((dayPlan, index) => {
                 const isWorkout = dayPlan.workoutTitle.toLowerCase() !== 'ruhetag';
                 const cellClass = isWorkout ? 'workout' : 'rest';
-                headerHTML += `
-                    <div class="day-cell ${cellClass}" data-title="${dayPlan.day}: ${dayPlan.workoutTitle}" data-details="${isWorkout ? dayPlan.workoutDetails : ''}">
-                        <div>
-                            <p class="day-name">${dayPlan.day}</p>
-                            <p class="workout-title">${dayPlan.workoutTitle}</p>
-                        </div>
-                        ${isWorkout ? '<p class="view-details">Details &rarr;</p>' : ''}
+                const dayElement = document.createElement('div');
+                dayElement.className = `day-cell ${cellClass}`;
+                dayElement.style.animationDelay = `${index * 100}ms`; 
+                dayElement.innerHTML = `
+                    <div>
+                        <p class="day-name">${dayPlan.day}</p>
+                        <p class="workout-title">${dayPlan.workoutTitle}</p>
                     </div>
+                    ${isWorkout ? '<p class="view-details">Details &rarr;</p>' : ''}
                 `;
+                if (isWorkout) {
+                    dayElement.dataset.title = `${dayPlan.day}: ${dayPlan.workoutTitle}`;
+                    dayElement.dataset.details = dayPlan.workoutDetails;
+                }
+                planResultContainer.appendChild(dayElement);
             });
-
-            headerHTML += '</div></div>';
-            weekSection.innerHTML = headerHTML;
-            planResultContainer.appendChild(weekSection);
-        });
+        } else {
+            planResultContainer.innerHTML = '<p>Kein Plan gefunden.</p>';
+        }
     };
-
 
     const openModal = (title, details) => {
         modalTitle.textContent = title;
@@ -376,7 +313,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const userData = doc.data();
                     usernameDisplay.textContent = userData.profile.username || user.email;
 
-                    if (userData.plan && Object.keys(userData.plan.weeklyPlans).length > 0) {
+                    // KORRIGIERTE ABFRAGE
+                    if (userData.plan && userData.plan.weeklyPlans && Object.keys(userData.plan.weeklyPlans).length > 0) {
                         displayResults(userData);
                         showPage('dashboard');
                     } else if (userData.profile) {
@@ -417,7 +355,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     nextBtn.addEventListener('click', () => {
-        if (!validateStep(currentRegStep, registrationSteps, regUserData)) return;
+        if (!validateStep(currentRegStep, registrationSteps)) return;
         saveStepData(currentRegStep, registrationSteps, regUserData);
         if (currentRegStep < registrationSteps.length - 1) {
             currentRegStep++;
@@ -453,7 +391,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     updateNextBtn.addEventListener('click', () => {
-        if (!validateStep(currentUpdateStep, updatePlanSteps, updateUserData, '_update')) return;
+        if (!validateStep(currentUpdateStep, updatePlanSteps, '_update')) return;
         saveStepData(currentUpdateStep, updatePlanSteps, updateUserData, '_update');
         if (currentUpdateStep < updatePlanSteps.length - 1) {
             currentUpdateStep++;
@@ -495,18 +433,9 @@ document.addEventListener('DOMContentLoaded', () => {
         showPage('updatePlan');
     });
     cancelUpdateBtn.addEventListener('click', () => showPage('dashboard'));
-    
-    // NEU: Event-Delegation für Dashboard-Interaktionen
     planResultContainer.addEventListener('click', (e) => {
-        const dayCell = e.target.closest('.day-cell.workout');
-        const weekHeader = e.target.closest('.week-header');
-
-        if (dayCell && dayCell.dataset.details) {
-            openModal(dayCell.dataset.title, dayCell.dataset.details);
-        }
-        if (weekHeader) {
-            weekHeader.parentElement.classList.toggle('open');
-        }
+        const clickedDay = e.target.closest('.day-cell.workout');
+        if (clickedDay) openModal(clickedDay.dataset.title, clickedDay.dataset.details);
     });
     
     document.body.addEventListener('change', (e) => {
@@ -547,129 +476,5 @@ document.addEventListener('DOMContentLoaded', () => {
     renderStep(currentRegStep, formStepsContainer);
     buildFormSteps(updatePlanSteps, updateFormStepsContainer, '_update');
     renderStep(currentUpdateStep, updateFormStepsContainer);
-    
-    // NEU: Kalender-Initialisierung
-    initCalendar('calendar-wrapper', regUserData, '');
-    initCalendar('calendar-wrapper_update', updateUserData, '_update');
-
     showPage('authLoading');
 });
-
-// NEU: Komplette Kalender-Logik
-function initCalendar(containerId, dataObject, idPrefix) {
-    const calendarWrapper = document.getElementById(containerId);
-    if (!calendarWrapper) return;
-
-    let date = new Date();
-    let currYear = date.getFullYear();
-    let currMonth = date.getMonth();
-    let startDate = null;
-    let endDate = null;
-
-    const renderCalendar = () => {
-        const months = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
-        let firstDayofMonth = new Date(currYear, currMonth, 1).getDay();
-        firstDayofMonth = firstDayofMonth === 0 ? 6 : firstDayofMonth - 1;
-        let lastDateofMonth = new Date(currYear, currMonth + 1, 0).getDate();
-        let lastDayofMonth = new Date(currYear, currMonth, lastDateofMonth).getDay();
-        lastDayofMonth = lastDayofMonth === 0 ? 6 : lastDayofMonth - 1;
-        let lastDateofLastMonth = new Date(currYear, currMonth, 0).getDate();
-        
-        let calendarHTML = `
-            <div class="calendar-header">
-                <button id="prevMonth${idPrefix}" class="calendar-nav-btn">&lt;</button>
-                <p id="currentMonthYear">${months[currMonth]} ${currYear}</p>
-                <button id="nextMonth${idPrefix}" class="calendar-nav-btn">&gt;</button>
-            </div>
-            <div class="calendar-grid">
-                <div class="calendar-day-name">Mo</div>
-                <div class="calendar-day-name">Di</div>
-                <div class="calendar-day-name">Mi</div>
-                <div class="calendar-day-name">Do</div>
-                <div class="calendar-day-name">Fr</div>
-                <div class="calendar-day-name">Sa</div>
-                <div class="calendar-day-name">So</div>
-        `;
-
-        for (let i = firstDayofMonth; i > 0; i--) {
-            calendarHTML += `<div class="calendar-day disabled">${lastDateofLastMonth - i + 1}</div>`;
-        }
-
-        const today = new Date();
-        today.setHours(0,0,0,0);
-
-        for (let i = 1; i <= lastDateofMonth; i++) {
-            let dayDate = new Date(currYear, currMonth, i);
-            let classes = 'calendar-day';
-            if (dayDate < today) {
-                classes += ' disabled';
-            }
-            if (dayDate.getTime() === today.getTime()) {
-                classes += ' today';
-            }
-            if (startDate && endDate && dayDate >= startDate && dayDate <= endDate) {
-                classes += ' in-range';
-                if (dayDate.getTime() === startDate.getTime()) classes += ' start-range';
-                if (dayDate.getTime() === endDate.getTime()) classes += ' end-range';
-            } else if (startDate && dayDate.getTime() === startDate.getTime()) {
-                classes += ' selected';
-            }
-            
-            calendarHTML += `<div class="${classes}" data-date="${dayDate.toISOString()}">${i}</div>`;
-        }
-        
-        for (let i = lastDayofMonth; i < 6; i++) {
-            calendarHTML += `<div class="calendar-day disabled">${i - lastDayofMonth + 1}</div>`
-        }
-        calendarHTML += `</div>`;
-        calendarWrapper.innerHTML = calendarHTML;
-    };
-
-    const updateSelectionInfo = () => {
-        const infoEl = document.getElementById(`selection-info${idPrefix}`);
-        if (!startDate) {
-            infoEl.textContent = 'Wähle einen Starttag.';
-        } else if (!endDate) {
-            infoEl.textContent = 'Wähle einen Endtag.';
-        } else {
-            const options = { year: 'numeric', month: 'long', day: 'numeric' };
-            infoEl.textContent = `Ausgewählt: ${startDate.toLocaleDateString('de-DE', options)} - ${endDate.toLocaleDateString('de-DE', options)}`;
-        }
-    };
-
-    calendarWrapper.addEventListener('click', (e) => {
-        if (e.target.classList.contains('calendar-day') && !e.target.classList.contains('disabled')) {
-            const selectedDate = new Date(e.target.dataset.date);
-            if (!startDate || (startDate && endDate)) {
-                startDate = selectedDate;
-                endDate = null;
-            } else {
-                if (selectedDate < startDate) {
-                    startDate = selectedDate;
-                } else {
-                    endDate = selectedDate;
-                }
-            }
-            dataObject.startDate = startDate ? startDate.toISOString() : null;
-            dataObject.endDate = endDate ? endDate.toISOString() : null;
-            renderCalendar();
-            updateSelectionInfo();
-        } else if (e.target.closest(`#prevMonth${idPrefix}`)) {
-            currMonth--;
-            if (currMonth < 0) {
-                currMonth = 11;
-                currYear--;
-            }
-            renderCalendar();
-        } else if (e.target.closest(`#nextMonth${idPrefix}`)) {
-            currMonth++;
-            if (currMonth > 11) {
-                currMonth = 0;
-                currYear++;
-            }
-            renderCalendar();
-        }
-    });
-
-    renderCalendar();
-}
