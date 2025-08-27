@@ -2,13 +2,9 @@ const fetch = require('node-fetch');
 const admin = require('firebase-admin');
 
 // --- FIREBASE ADMIN SDK INITIALISIERUNG ---
-if (!admin.apps.length) {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
-    admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
-    });
-}
-const db = admin.firestore();
+// Die Initialisierung erfolgt jetzt sicher innerhalb des Handlers.
+
+const db = () => admin.firestore();
 
 // --- PROMPT-ERSTELLUNG (AKTUALISIERT) ---
 const createPrompt = (userProfile) => {
@@ -40,19 +36,41 @@ const createPrompt = (userProfile) => {
     `;
 };
 
-// --- NETLIFY FUNCTION HANDLER ---
+// --- NETLIFY FUNCTION HANDLER (VERBESSERT) ---
 exports.handler = async (event, context) => {
-    if (event.httpMethod !== 'POST') {
-        return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
+    // **NEU: Verbesserte Fehlerbehandlung für Umgebungsvariablen**
+    // Prüft direkt am Anfang, ob alle notwendigen Schlüssel vorhanden sind.
+    const firebaseServiceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+    const geminiApiKey = process.env.GEMINI_API_KEY;
+
+    if (!firebaseServiceAccountKey || !geminiApiKey) {
+        const errorMessage = "Server-Konfigurationsfehler: Notwendige API-Schlüssel (Firebase oder Gemini) sind nicht in den Umgebungsvariablen von Netlify gesetzt.";
+        console.error(errorMessage);
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ error: errorMessage })
+        };
     }
 
     try {
+        // **NEU: Sichere Initialisierung von Firebase Admin**
+        if (!admin.apps.length) {
+            const serviceAccount = JSON.parse(firebaseServiceAccountKey);
+            admin.initializeApp({
+                credential: admin.credential.cert(serviceAccount)
+            });
+        }
+
+        if (event.httpMethod !== 'POST') {
+            return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
+        }
+
         // 1. Nutzer authentifizieren
         const idToken = event.headers.authorization?.split('Bearer ')[1];
         if (!idToken) throw new Error('Kein Token bereitgestellt.');
         const decodedToken = await admin.auth().verifyIdToken(idToken);
         const uid = decodedToken.uid;
-        const userDocRef = db.collection('users').doc(uid);
+        const userDocRef = db().collection('users').doc(uid);
 
         // 2. Nutzerprofil aus Firestore lesen
         const doc = await userDocRef.get();
@@ -62,10 +80,8 @@ exports.handler = async (event, context) => {
         const userProfile = doc.data().profile;
 
         // 3. Plan mit Gemini API generieren
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) throw new Error('GEMINI_API_KEY ist nicht konfiguriert.');
-        
         const prompt = createPrompt(userProfile);
+        // KORREKTUR: Der Tippfehler in der Variable wurde behoben (geminiApikey -> geminiApiKey).
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
         const payload = {
             contents: [{ role: "user", parts: [{ text: prompt }] }],
@@ -80,6 +96,7 @@ exports.handler = async (event, context) => {
 
         if (!apiResponse.ok) {
             const errorBody = await apiResponse.text();
+            console.error("Gemini API Fehler:", errorBody);
             throw new Error(`Fehler bei der Kommunikation mit der KI: ${errorBody}`);
         }
 
@@ -105,7 +122,7 @@ exports.handler = async (event, context) => {
         };
 
     } catch (error) {
-        console.error('Fehler in der Netlify Function:', error);
+        console.error('Fehler in der Netlify Function:', error.message);
         return {
             statusCode: 500,
             body: JSON.stringify({ error: error.message || 'Ein interner Serverfehler ist aufgetreten.' })
