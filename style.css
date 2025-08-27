@@ -205,12 +205,77 @@ body {
     border-color: rgba(239, 68, 68, 0.3);
 }
 .btn-danger:hover { background-color: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.5); }
+
+/* NEU: Dashboard Plan Container */
+.plan-container {
+    width: 100%;
+    padding-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+.week-plan-section {
+    background-color: rgba(31, 41, 55, 0.5);
+    border: 1px solid #374151;
+    border-radius: 1rem;
+    overflow: hidden;
+}
+.week-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    cursor: pointer;
+    background-color: rgba(55, 65, 81, 0.3);
+}
+.week-header h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+.week-header .date-range {
+    font-size: 0.875rem;
+    color: #9CA3AF;
+}
+.current-week-badge {
+    background-color: #10B981;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    margin-left: 1rem;
+}
+.toggle-plan-btn {
+    background: none;
+    border: none;
+    color: #60A5FA;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.toggle-plan-btn svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    transition: transform 0.3s ease;
+}
+.week-plan-section.open .toggle-plan-btn svg {
+    transform: rotate(180deg);
+}
+.plan-grid-wrapper {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease-in-out, padding 0.5s ease-in-out;
+    padding: 0 1.5rem;
+}
+.week-plan-section.open .plan-grid-wrapper {
+    max-height: 2000px; /* Ausreichend groß */
+    padding: 1.5rem;
+}
 .plan-grid {
-    flex-grow: 1;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 1.5rem;
-    padding-top: 1.5rem;
 }
 .day-cell {
     background: linear-gradient(145deg, #2c3647, #1e2633);
@@ -321,16 +386,97 @@ body {
     color: white;
 }
 
-/* --- Media Queries für Responsivität --- */
+/* NEU: Kalender-Stile */
+.calendar-container {
+    padding: 1rem;
+}
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+.calendar-nav-btn {
+    background: #374151;
+    border: 1px solid #4B5563;
+    border-radius: 50%;
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #D1D5DB;
+}
+.calendar-nav-btn:hover {
+    background: #4B5563;
+}
+#currentMonthYear {
+    font-weight: 700;
+    font-size: 1.25rem;
+}
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.5rem;
+}
+.calendar-day-name {
+    text-align: center;
+    font-size: 0.75rem;
+    color: #9CA3AF;
+    padding-bottom: 0.5rem;
+}
+.calendar-day {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 2.5rem;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+.calendar-day:not(.disabled):hover {
+    background-color: #374151;
+}
+.calendar-day.disabled {
+    color: #4B5563;
+    cursor: not-allowed;
+}
+.calendar-day.today {
+    border: 2px solid #3B82F6;
+}
+.calendar-day.selected {
+    background-color: #3B82F6;
+    color: white;
+}
+.calendar-day.in-range {
+    background-color: rgba(59, 130, 246, 0.3);
+    border-radius: 0;
+}
+.calendar-day.start-range {
+    background-color: #3B82F6;
+    color: white;
+    border-top-left-radius: 50%;
+    border-bottom-left-radius: 50%;
+}
+.calendar-day.end-range {
+    background-color: #3B82F6;
+    color: white;
+    border-top-right-radius: 50%;
+    border-bottom-right-radius: 50%;
+}
+#selection-info {
+    text-align: center;
+    margin-top: 1rem;
+    color: #9CA3AF;
+    min-height: 1.25rem;
+}
 
-/* Tablets und kleine Desktops */
+/* --- Media Queries für Responsivität --- */
 @media (max-width: 1024px) {
     .plan-grid {
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     }
 }
-
-/* Mobilgeräte */
 @media (max-width: 768px) {
     .dashboard-header {
         flex-direction: column;
@@ -342,7 +488,7 @@ body {
         justify-content: space-between;
     }
     .plan-grid {
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        grid-template-columns: 1fr;
     }
     .app-title {
         font-size: 2.5rem; /* 40px */
@@ -352,11 +498,10 @@ body {
     }
 }
 
-/* NEU: Stile für die Registrierungs-Animation */
+/* Registrierungs-Animation */
 #registrationStartView, #registrationFormWrapper {
     transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
 }
-
 .fade-out-left { animation: fadeOutLeft 0.4s ease-in-out forwards; }
 @keyframes fadeOutLeft {
     to { opacity: 0; transform: translateX(-20px); }
@@ -376,8 +521,7 @@ body {
     to { opacity: 1; transform: translateX(0); }
 }
 
-
-/* NEU: Stil für deaktivierte Formular-Abschnitte */
+/* Deaktivierte Formular-Abschnitte */
 [data-dependency] {
     transition: opacity 0.3s ease-in-out;
 }
@@ -386,7 +530,7 @@ body {
     pointer-events: none;
 }
 
-/* NEU: Angepasste Stile für die Checkbox */
+/* Checkbox-Stile */
 .checkbox-container {
     display: flex;
     align-items: center;
@@ -404,11 +548,10 @@ body {
 }
 .custom-checkbox:focus {
     outline: none;
-    /* KORREKTUR: Ersetzt die ungültigen 'ring'-Eigenschaften durch eine standardkonforme 'box-shadow' */
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
 }
 .custom-checkbox-label {
     margin-left: 0.75rem;
-    font-size: 1rem; /* Größere Schrift */
-    color: #D1D5DB; /* Helleres Grau */
+    font-size: 1rem;
+    color: #D1D5DB;
 }

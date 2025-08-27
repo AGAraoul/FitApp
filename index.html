@@ -19,7 +19,7 @@
             <div class="loader"></div>
         </div>
 
-        <!-- Seite 1: Registrierung (Überarbeitet mit Startansicht) -->
+        <!-- Seite 1: Registrierung (Multi-Step) -->
         <div id="registrationPage" class="page auth-container">
             <div class="w-full max-w-2xl">
                 <div class="auth-header">
@@ -27,13 +27,11 @@
                     <p class="app-tagline">Dein ultimativer Personal-Trainer für maßgeschneiderte Fitnesspläne.</p>
                 </div>
                 <div class="card p-6 sm:p-8 shadow-lg">
-                    <!-- NEU: Initiale Ansicht mit Registrierungs-Button -->
                     <div id="registrationStartView">
                          <h2 class="text-2xl font-bold text-center mb-8">Bereit für deine Fitness-Reise?</h2>
                          <button id="startRegistrationProcessBtn" class="btn-primary w-full !text-lg !py-3">Jetzt Registrieren</button>
                     </div>
 
-                    <!-- Das Multi-Step Formular, jetzt initial versteckt -->
                     <div id="registrationFormWrapper" style="display: none;">
                         <div class="mb-8">
                             <div class="w-full progress-bar-bg rounded-full h-2.5">
@@ -49,7 +47,6 @@
                         </div>
                     </div>
 
-                     <!-- Dieser Teil ist jetzt immer sichtbar auf der Registrierungsseite -->
                      <div class="text-center mt-6">
                         <p class="text-gray-400">Schon ein Konto?
                             <button id="showLoginBtn" class="font-semibold text-blue-400 hover:underline">Hier anmelden</button>
@@ -92,7 +89,7 @@
         <div id="planCreationLoadingPage" class="page auth-container">
              <div class="card p-8 shadow-lg flex flex-col items-center max-w-md w-full">
                 <div class="loader mb-4"></div>
-                <h2 class="text-xl font-semibold">Wir erstellen deinen persönlichen Plan...</h2>
+                <h2 class="text-xl font-semibold">Wir erstellen deine persönlichen Pläne...</h2>
                 <p class="text-gray-400">Dies kann einen Moment dauern. Bitte schließe das Fenster nicht.</p>
             </div>
         </div>
@@ -116,7 +113,8 @@
                         </button>
                     </div>
                 </header>
-                <main id="planResult" class="plan-grid"></main>
+                <!-- NEU: Container für die wöchentlichen Pläne -->
+                <main id="planResult" class="plan-container"></main>
             </div>
         </div>
 
