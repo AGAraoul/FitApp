@@ -206,74 +206,65 @@ body {
 }
 .btn-danger:hover { background-color: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.5); }
 
-/* NEU: Dashboard Plan Container */
+/* Dashboard Plan Container */
 .plan-container {
     width: 100%;
     padding-top: 1.5rem;
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 1.5rem; /* Reduzierter Abstand */
 }
-.week-plan-section {
-    background-color: transparent;
-    border: 1px solid #374151;
-    border-radius: 1rem;
-    overflow: hidden;
-    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
-}
-.week-header {
+
+/* NEU: Stile für die Wochen-Navigation */
+.week-navigator {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1.25rem 1.75rem;
-    cursor: pointer;
     background-color: #1f2937;
+    padding: 1rem 1.5rem;
+    border-radius: 1rem;
+    border: 1px solid #374151;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
-.week-header h3 {
+.week-info {
+    text-align: center;
+}
+.week-info h3 {
     font-size: 1.5rem;
     font-weight: 700;
+    color: #ffffff;
+    line-height: 1.2;
 }
-.week-header .date-range {
+.week-info .date-range {
     font-size: 1rem;
     color: #9CA3AF;
 }
-.current-week-badge {
-    background-color: #10B981;
-    color: white;
-    font-size: 0.875rem;
-    font-weight: 600;
-    padding: 0.25rem 0.75rem;
-    border-radius: 9999px;
-    margin-left: 1rem;
-}
-.toggle-plan-btn {
-    background: none;
-    border: none;
-    color: #60A5FA;
-    font-weight: 600;
+.week-nav-btn {
+    background-color: #374151;
+    border: 1px solid #4B5563;
+    color: #D1D5DB;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 9999px; /* full */
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    justify-content: center;
+    transition: all 0.2s ease-in-out;
 }
-.toggle-plan-btn svg {
+.week-nav-btn:hover:not(:disabled) {
+    background-color: #4B5563;
+    border-color: #6B7280;
+    transform: scale(1.05);
+}
+.week-nav-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+.week-nav-btn svg {
     width: 1.5rem;
     height: 1.5rem;
-    transition: transform 0.3s ease;
 }
-.week-plan-section.open .toggle-plan-btn svg {
-    transform: rotate(180deg);
-}
-.plan-grid-wrapper {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.5s ease-in-out, padding 0.5s ease-in-out;
-    padding: 0 1.75rem;
-    background-color: rgba(17, 24, 39, 0.5);
-}
-.week-plan-section.open .plan-grid-wrapper {
-    max-height: 2000px; /* Ausreichend groß */
-    padding: 1.75rem;
-}
+
 .plan-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -389,7 +380,7 @@ body {
     color: white;
 }
 
-/* NEU: Kalender-Stile */
+/* Kalender-Stile */
 .calendar-container {
     padding: 1rem;
 }
@@ -498,6 +489,20 @@ body {
     }
     .app-tagline {
         font-size: 1rem; /* 16px */
+    }
+    .week-info h3 {
+        font-size: 1.25rem;
+    }
+    .week-info .date-range {
+        font-size: 0.875rem;
+    }
+    .week-nav-btn {
+        width: 2.5rem;
+        height: 2.5rem;
+    }
+    .week-nav-btn svg {
+        width: 1.25rem;
+        height: 1.25rem;
     }
 }
 
