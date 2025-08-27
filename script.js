@@ -39,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const newPlanBtn = document.getElementById('newPlanBtn');
     const planResultContainer = document.getElementById('planResult');
     const usernameDisplay = document.getElementById('usernameDisplay');
+    const fitnessLevelDisplay = document.getElementById('fitnessLevelDisplay'); // NEU
     const updateFormStepsContainer = document.getElementById('update-form-steps');
     const updateProgressBar = document.getElementById('updateProgressBar');
     const updateNextBtn = document.getElementById('updateNextBtn');
@@ -56,6 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const regUserData = {};
     const updateUserData = {};
     let fullPlanData = {};
+    let currentUserData = {}; // NEU: Um Nutzerdaten global zu halten
     let currentWeekIndex = 0;
 
 
@@ -292,6 +294,50 @@ document.addEventListener('DOMContentLoaded', () => {
             showPage('login');
         });
     };
+    
+    // NEU: Funktion zur Steigerung der Intensität
+    const increaseIntensity = async () => {
+        const user = auth.currentUser;
+        if (!user || !currentUserData.profile) return;
+
+        const fitnessLevels = [
+            'Anfänger - Niedrige Körperliche Fitness', 
+            'Fortgeschritten - Durchschnittliche Fitness', 
+            'Sportlich - Überdurchschnittliche Fitness', 
+            'Extrem Sportlich - Herausragende Fitness'
+        ];
+
+        const currentLevel = currentUserData.profile.fitnessLevel;
+        const currentIndex = fitnessLevels.indexOf(currentLevel);
+
+        if (currentIndex === -1 || currentIndex >= fitnessLevels.length - 1) {
+            alert("Du hast bereits das höchste Fitnesslevel erreicht!");
+            return;
+        }
+
+        const newLevel = fitnessLevels[currentIndex + 1];
+        const sortedWeeks = Object.keys(fullPlanData.weeklyPlans).sort();
+        const currentWeekStartDate = sortedWeeks[currentWeekIndex];
+
+        if (!confirm(`Möchtest du die Intensität auf "${newLevel.split(' -')[0]}" erhöhen? Der Plan wird ab der aktuellen Woche (${new Date(currentWeekStartDate).toLocaleDateString('de-DE')}) neu generiert.`)) {
+            return;
+        }
+        
+        try {
+            showPage('planCreationLoading');
+            const userDocRef = db.collection('users').doc(user.uid);
+            await userDocRef.update({
+                'profile.fitnessLevel': newLevel,
+                'plan.startDate': currentWeekStartDate, // Wichtig: Startdatum für Neugenerierung anpassen
+                'plan.weeklyPlans': {} // Alten Plan löschen, um Neugenerierung auszulösen
+            });
+            // Die onSnapshot-Logik wird den Rest automatisch handhaben
+        } catch (error) {
+            console.error("Fehler bei der Intensitätssteigerung:", error);
+            alert("Ein Fehler ist aufgetreten. Bitte versuche es erneut.");
+            showPage('dashboard');
+        }
+    };
 
     const renderWeek = (weekIndex) => {
         const sortedWeeks = Object.keys(fullPlanData.weeklyPlans).sort();
@@ -306,10 +352,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const weekStartDate = new Date(weekKey);
         const weekEndDate = new Date(weekStartDate);
-        // NEUE LOGIK: Enddatum basierend auf der tatsächlichen Länge des Plans berechnen
         weekEndDate.setDate(weekEndDate.getDate() + (weekData.weeklyPlan.length - 1));
 
         const formatDate = (date) => `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+
+        // NEU: Button zur Steigerung der Intensität hinzufügen
+        const currentLevel = currentUserData.profile.fitnessLevel;
+        const isMaxLevel = currentLevel.includes('Extrem Sportlich');
+        let intensityButtonHTML = '';
+        if (!isMaxLevel) {
+            intensityButtonHTML = `
+                <div class="intensity-increase-container">
+                    <button id="increaseIntensityBtn">Intensität steigern</button>
+                </div>
+            `;
+        }
 
         let navigatorHTML = `
             <div class="week-navigator">
@@ -323,6 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <button id="nextWeekBtn" class="week-nav-btn" ${weekIndex === sortedWeeks.length - 1 ? 'disabled' : ''}>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
                 </button>
+                ${intensityButtonHTML}
             </div>
         `;
 
@@ -343,6 +401,12 @@ document.addEventListener('DOMContentLoaded', () => {
         gridHTML += '</div>';
 
         planResultContainer.innerHTML = navigatorHTML + gridHTML;
+        
+        // NEU: Event Listener für den neuen Button
+        const increaseBtn = document.getElementById('increaseIntensityBtn');
+        if (increaseBtn) {
+            increaseBtn.addEventListener('click', increaseIntensity);
+        }
     };
 
     const openModal = (title, details) => {
@@ -359,11 +423,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const userDocRef = db.collection('users').doc(user.uid);
             planListener = userDocRef.onSnapshot(async (doc) => {
                 if (doc.exists) {
-                    const userData = doc.data();
-                    usernameDisplay.textContent = userData.profile.username || user.email;
+                    currentUserData = doc.data(); // NEU: Nutzerdaten speichern
+                    usernameDisplay.textContent = currentUserData.profile.username || user.email;
+                    
+                    // NEU: Fitnesslevel anzeigen
+                    if (currentUserData.profile.fitnessLevel) {
+                        fitnessLevelDisplay.textContent = `Dein Level: ${currentUserData.profile.fitnessLevel.split(' -')[0]}`;
+                        fitnessLevelDisplay.style.display = 'inline-block';
+                    } else {
+                        fitnessLevelDisplay.style.display = 'none';
+                    }
 
-                    if (userData.plan && userData.plan.weeklyPlans && Object.keys(userData.plan.weeklyPlans).length > 0) {
-                        fullPlanData = userData.plan;
+                    if (currentUserData.plan && currentUserData.plan.weeklyPlans && Object.keys(currentUserData.plan.weeklyPlans).length > 0) {
+                        fullPlanData = currentUserData.plan;
                         const sortedWeeks = Object.keys(fullPlanData.weeklyPlans).sort();
                         const today = new Date();
                         today.setHours(0, 0, 0, 0);
@@ -384,13 +456,12 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         }
                         if (!foundCurrentWeek) {
-                             // Wenn heute außerhalb des Plans liegt, die erste Woche anzeigen
-                            currentWeekIndex = 0;
+                             currentWeekIndex = 0;
                         }
                         
                         renderWeek(currentWeekIndex);
                         showPage('dashboard');
-                    } else if (userData.profile && userData.plan && userData.plan.startDate) {
+                    } else if (currentUserData.profile && currentUserData.plan && currentUserData.plan.startDate) {
                         showPage('dashboard');
                         planResultContainer.innerHTML = `<div class="col-span-full flex flex-col items-center justify-center p-8"><div class="loader mb-4"></div><p class="text-lg font-semibold">Dein persönlicher Plan wird generiert...</p><p class="text-gray-400">Das kann bis zu 30 Sekunden dauern.</p></div>`;
                         const idToken = await user.getIdToken(true);

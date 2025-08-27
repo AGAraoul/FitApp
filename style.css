@@ -183,6 +183,19 @@ body {
 .user-greeting h2 { line-height: 1.2; }
 .user-actions { display: flex; align-items: center; gap: 1rem; }
 
+/* NEU: Fitnesslevel Anzeige */
+.fitness-level-badge {
+    margin-top: 0.5rem;
+    display: inline-block;
+    background-color: rgba(59, 130, 246, 0.2);
+    color: #93C5FD;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: 9999px;
+    border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
 .btn-secondary, .btn-danger {
     display: flex;
     align-items: center;
@@ -212,12 +225,13 @@ body {
     padding-top: 1.5rem;
     display: flex;
     flex-direction: column;
-    gap: 1.5rem; /* Reduzierter Abstand */
+    gap: 1.5rem;
 }
 
-/* NEU: Stile für die Wochen-Navigation */
+/* Stile für die Wochen-Navigation */
 .week-navigator {
     display: flex;
+    flex-wrap: wrap; /* Erlaubt Umbruch auf kleinen Bildschirmen */
     justify-content: space-between;
     align-items: center;
     background-color: #1f2937;
@@ -225,9 +239,11 @@ body {
     border-radius: 1rem;
     border: 1px solid #374151;
     box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    gap: 1rem;
 }
 .week-info {
     text-align: center;
+    flex-grow: 1; /* Nimmt den verfügbaren Platz ein */
 }
 .week-info h3 {
     font-size: 1.5rem;
@@ -263,6 +279,30 @@ body {
 .week-nav-btn svg {
     width: 1.5rem;
     height: 1.5rem;
+}
+
+/* NEU: Button zur Steigerung der Intensität */
+.intensity-increase-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding-top: 0.5rem;
+    border-top: 1px solid #374151;
+    margin-top: 1rem;
+}
+#increaseIntensityBtn {
+    background: linear-gradient(to right, #6D28D9, #4F46E5);
+    color: white;
+    font-weight: 600;
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.5rem;
+    border: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+}
+#increaseIntensityBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(79, 70, 229, 0.4);
 }
 
 .plan-grid {
@@ -503,6 +543,9 @@ body {
     .week-nav-btn svg {
         width: 1.25rem;
         height: 1.25rem;
+    }
+    .intensity-increase-container {
+        order: 3; /* Sorgt dafür, dass der Button unter der Wochen-Info erscheint */
     }
 }
 
