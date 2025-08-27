@@ -24,6 +24,10 @@ document.addEventListener('DOMContentLoaded', () => {
         dashboard: document.getElementById('dashboardPage'),
         updatePlan: document.getElementById('updatePlanPage'),
     };
+    // NEU: Zusätzliche Elemente für die neue Registrierungslogik
+    const registrationStartView = document.getElementById('registrationStartView');
+    const registrationFormWrapper = document.getElementById('registrationFormWrapper');
+    const startRegistrationProcessBtn = document.getElementById('startRegistrationProcessBtn');
     const registrationForm = document.getElementById('registrationForm');
     const formStepsContainer = document.getElementById('form-steps');
     const progressBar = document.getElementById('progressBar');
@@ -36,8 +40,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const newPlanBtn = document.getElementById('newPlanBtn');
     const planResultContainer = document.getElementById('planResult');
     const usernameDisplay = document.getElementById('usernameDisplay');
-    // ENTFERNT: Kalorien-Elemente sind nicht mehr nötig
-    // const calorieCard = document.getElementById('calorieCard');
     const updateFormStepsContainer = document.getElementById('update-form-steps');
     const updateProgressBar = document.getElementById('updateProgressBar');
     const updateNextBtn = document.getElementById('updateNextBtn');
@@ -170,14 +172,9 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- Spezifische Anwendungslogik ---
-     const showPage = (pageName) => {
+    const showPage = (pageName) => {
         Object.values(pages).forEach(page => page.style.display = 'none');
         if (pages[pageName]) {
-            // ERSETZT: Alte, fehleranfällige Logik
-            // pages[pageName].style.display = (pageName.includes('auth') || pageName.includes('Loading') || pageName.includes('update')) ? 'flex' : 'block';
-            
-            // NEU: Robuste Prüfung, ob der Container zentriert werden soll.
-            // Dies stellt sicher, dass alle aktuellen und zukünftigen "auth"-Seiten korrekt dargestellt werden.
             if (pages[pageName].classList.contains('auth-container')) {
                 pages[pageName].style.display = 'flex';
             } else {
@@ -240,12 +237,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const handleLogout = () => auth.signOut();
 
     const displayResults = (data) => {
-        // ENTFERNT: Kalorien-Logik entfernt
-        // document.getElementById('calorieResult').textContent = data.calories || 'N/A';
         planResultContainer.innerHTML = '';
         if (data.weeklyPlan && data.weeklyPlan.length === 7) {
-            // ENTFERNT: calorieCard wird nicht mehr angezeigt
-            // calorieCard.classList.remove('hidden');
             data.weeklyPlan.forEach((dayPlan, index) => {
                 const isWorkout = dayPlan.workoutTitle.toLowerCase() !== 'ruhetag';
                 const cellClass = isWorkout ? 'workout' : 'rest';
@@ -292,8 +285,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         showPage('dashboard');
                     } else if (userData.profile) {
                         showPage('dashboard');
-                        // ENTFERNT: calorieCard wird nicht mehr versteckt
-                        // calorieCard.classList.add('hidden');
                         planResultContainer.innerHTML = `<div class="col-span-full flex flex-col items-center justify-center p-8"><div class="loader mb-4"></div><p class="text-lg font-semibold">Dein persönlicher Plan wird generiert...</p><p class="text-gray-400">Das kann bis zu 30 Sekunden dauern.</p></div>`;
                         const idToken = await user.getIdToken(true);
                         fetch('/.netlify/functions/generatePlan', {
@@ -310,7 +301,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Registrierungs-Navigation
+    // NEU: Listener für den Start der Registrierung
+    startRegistrationProcessBtn.addEventListener('click', () => {
+        registrationStartView.style.display = 'none';
+        registrationFormWrapper.style.display = 'block';
+        currentRegStep = 0;
+        renderStep(currentRegStep, formStepsContainer);
+        progressBar.style.width = '0%';
+        nextBtn.textContent = 'Weiter';
+    });
+
+    // Registrierungs-Navigation (Überarbeitet)
     nextBtn.addEventListener('click', () => {
         if (!validateStep(currentRegStep, registrationSteps)) return;
         saveStepData(currentRegStep, registrationSteps, regUserData);
@@ -318,7 +319,6 @@ document.addEventListener('DOMContentLoaded', () => {
             currentRegStep++;
             renderStep(currentRegStep, formStepsContainer);
             progressBar.style.width = `${(currentRegStep / (registrationSteps.length - 1)) * 100}%`;
-            prevBtn.disabled = false;
             if (currentRegStep === registrationSteps.length - 1) nextBtn.textContent = 'Plan generieren';
         } else {
             handleRegistration();
@@ -330,7 +330,10 @@ document.addEventListener('DOMContentLoaded', () => {
             renderStep(currentRegStep, formStepsContainer);
             progressBar.style.width = `${(currentRegStep / (registrationSteps.length - 1)) * 100}%`;
             nextBtn.textContent = 'Weiter';
-            if (currentRegStep === 0) prevBtn.disabled = true;
+        } else {
+            // Wenn auf dem ersten Schritt, zurück zur Startansicht
+            registrationFormWrapper.style.display = 'none';
+            registrationStartView.style.display = 'block';
         }
     });
 
@@ -358,11 +361,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Andere Listener
+    // Andere Listener (Überarbeitet)
     loginForm.addEventListener('submit', handleLogin);
     logoutBtn.addEventListener('click', handleLogout);
     showLoginBtn.addEventListener('click', () => showPage('login'));
-    showRegisterBtn.addEventListener('click', () => showPage('registration'));
+    showRegisterBtn.addEventListener('click', () => {
+        showPage('registration');
+        // Zurücksetzen zur Startansicht, falls der Nutzer vorher im Formular war
+        registrationFormWrapper.style.display = 'none';
+        registrationStartView.style.display = 'block';
+    });
     newPlanBtn.addEventListener('click', () => {
         currentUpdateStep = 0;
         Object.keys(updateUserData).forEach(key => delete updateUserData[key]);
