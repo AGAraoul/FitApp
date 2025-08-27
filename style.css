@@ -97,7 +97,6 @@ body {
     color: #9CA3AF; /* gray-400 */
     margin-top: 0.5rem;
     max-width: 400px;
-    /* HINZUGEFÜGT: Zentriert den Text-Block selbst */
     margin-left: auto;
     margin-right: auto;
 }

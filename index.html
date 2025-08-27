@@ -21,56 +21,60 @@
 
         <!-- Seite 1: Registrierung (Multi-Step) -->
         <div id="registrationPage" class="page auth-container">
-            <!-- GEÄNDERT: Breitenklassen hinzugefügt für korrekte Zentrierung -->
-            <div class="auth-header w-full max-w-2xl">
-                <h1 class="app-title">BeFit</h1>
-                <p class="app-tagline">Dein ultimativer Personal-Trainer für maßgeschneiderte Fitnesspläne.</p>
-            </div>
-            <div class="card w-full max-w-2xl p-6 sm:p-8 shadow-lg">
-                <div class="mb-8">
-                    <div class="w-full progress-bar-bg rounded-full h-2.5">
-                        <div id="progressBar" class="progress-bar-fill h-2.5 rounded-full" style="width: 0%"></div>
+            <!-- HINZUGEFÜGT: Wrapper für korrekte Zentrierung als Block -->
+            <div class="w-full max-w-2xl">
+                <div class="auth-header">
+                    <h1 class="app-title">BeFit</h1>
+                    <p class="app-tagline">Dein ultimativer Personal-Trainer für maßgeschneiderte Fitnesspläne.</p>
+                </div>
+                <div class="card p-6 sm:p-8 shadow-lg">
+                    <div class="mb-8">
+                        <div class="w-full progress-bar-bg rounded-full h-2.5">
+                            <div id="progressBar" class="progress-bar-fill h-2.5 rounded-full" style="width: 0%"></div>
+                        </div>
                     </div>
-                </div>
-                <form id="registrationForm">
-                    <div id="form-steps" class="relative overflow-hidden"></div>
-                </form>
-                <div class="flex justify-between mt-8">
-                    <button id="prevBtn" class="btn-primary bg-gray-600 hover:bg-gray-500" disabled>Zurück</button>
-                    <button id="nextBtn" class="btn-primary">Weiter</button>
-                </div>
-                 <div class="text-center mt-6">
-                    <p class="text-gray-400">Schon ein Konto?
-                        <button id="showLoginBtn" class="font-semibold text-blue-400 hover:underline">Hier anmelden</button>
-                    </p>
+                    <form id="registrationForm">
+                        <div id="form-steps" class="relative overflow-hidden"></div>
+                    </form>
+                    <div class="flex justify-between mt-8">
+                        <button id="prevBtn" class="btn-primary bg-gray-600 hover:bg-gray-500" disabled>Zurück</button>
+                        <button id="nextBtn" class="btn-primary">Weiter</button>
+                    </div>
+                     <div class="text-center mt-6">
+                        <p class="text-gray-400">Schon ein Konto?
+                            <button id="showLoginBtn" class="font-semibold text-blue-400 hover:underline">Hier anmelden</button>
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Seite 2: Login -->
         <div id="loginPage" class="page auth-container">
-            <!-- GEÄNDERT: Breitenklassen hinzugefügt für korrekte Zentrierung -->
-            <div class="auth-header w-full max-w-md">
-                <h1 class="app-title">BeFit</h1>
-                <p class="app-tagline">Dein ultimativer Personal-Trainer für maßgeschneiderte Fitnesspläne.</p>
-            </div>
-            <div class="card w-full max-w-md p-8 shadow-lg">
-                <h2 class="text-3xl font-bold text-center mb-4">Willkommen zurück!</h2>
-                <form id="loginForm" class="space-y-6">
-                    <div>
-                        <label for="loginEmail" class="block mb-2 text-sm font-medium text-gray-300">Email</label>
-                        <input type="email" id="loginEmail" class="input-field" required>
+            <!-- HINZUGEFÜGT: Wrapper für korrekte Zentrierung als Block -->
+            <div class="w-full max-w-md">
+                <div class="auth-header">
+                    <h1 class="app-title">BeFit</h1>
+                    <p class="app-tagline">Dein ultimativer Personal-Trainer für maßgeschneiderte Fitnesspläne.</p>
+                </div>
+                <div class="card p-8 shadow-lg">
+                    <h2 class="text-3xl font-bold text-center mb-4">Willkommen zurück!</h2>
+                    <form id="loginForm" class="space-y-6">
+                        <div>
+                            <label for="loginEmail" class="block mb-2 text-sm font-medium text-gray-300">Email</label>
+                            <input type="email" id="loginEmail" class="input-field" required>
+                        </div>
+                        <div>
+                            <label for="loginPassword" class="block mb-2 text-sm font-medium text-gray-300">Passwort</label>
+                            <input type="password" id="loginPassword" class="input-field" required>
+                        </div>
+                        <button type="submit" class="btn-primary w-full !mt-8">Anmelden</button>
+                    </form>
+                    <div class="text-center mt-6">
+                        <p class="text-gray-400">Noch kein Konto?
+                            <button id="showRegisterBtn" class="font-semibold text-blue-400 hover:underline">Jetzt registrieren</button>
+                        </p>
                     </div>
-                    <div>
-                        <label for="loginPassword" class="block mb-2 text-sm font-medium text-gray-300">Passwort</label>
-                        <input type="password" id="loginPassword" class="input-field" required>
-                    </div>
-                    <button type="submit" class="btn-primary w-full !mt-8">Anmelden</button>
-                </form>
-                <div class="text-center mt-6">
-                    <p class="text-gray-400">Noch kein Konto?
-                        <button id="showRegisterBtn" class="font-semibold text-blue-400 hover:underline">Jetzt registrieren</button>
-                    </p>
                 </div>
             </div>
         </div>
@@ -109,23 +113,25 @@
 
         <!-- Plan aktualisieren (Multi-Step) -->
         <div id="updatePlanPage" class="page auth-container">
-            <div class="card w-full max-w-2xl p-6 sm:p-8 shadow-lg">
-                <div class="mb-8">
-                    <div class="w-full progress-bar-bg rounded-full h-2.5">
-                        <div id="updateProgressBar" class="progress-bar-fill h-2.5 rounded-full" style="width: 0%"></div>
+            <div class="w-full max-w-2xl">
+                <div class="card p-6 sm:p-8 shadow-lg">
+                    <div class="mb-8">
+                        <div class="w-full progress-bar-bg rounded-full h-2.5">
+                            <div id="updateProgressBar" class="progress-bar-fill h-2.5 rounded-full" style="width: 0%"></div>
+                        </div>
                     </div>
-                </div>
-                <form id="updatePlanForm">
-                    <div id="update-form-steps" class="relative overflow-hidden"></div>
-                </form>
-                <div class="flex justify-between mt-8">
-                    <button id="updatePrevBtn" class="btn-primary bg-gray-600 hover:bg-gray-500" disabled>Zurück</button>
-                    <button id="updateNextBtn" class="btn-primary">Weiter</button>
-                </div>
-                 <div class="text-center mt-6">
-                    <p class="text-gray-400">
-                        <button id="cancelUpdateBtn" class="font-semibold text-blue-400 hover:underline">Abbrechen und zum Dashboard</button>
-                    </p>
+                    <form id="updatePlanForm">
+                        <div id="update-form-steps" class="relative overflow-hidden"></div>
+                    </form>
+                    <div class="flex justify-between mt-8">
+                        <button id="updatePrevBtn" class="btn-primary bg-gray-600 hover:bg-gray-500" disabled>Zurück</button>
+                        <button id="updateNextBtn" class="btn-primary">Weiter</button>
+                    </div>
+                     <div class="text-center mt-6">
+                        <p class="text-gray-400">
+                            <button id="cancelUpdateBtn" class="font-semibold text-blue-400 hover:underline">Abbrechen und zum Dashboard</button>
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
