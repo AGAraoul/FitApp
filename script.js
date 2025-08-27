@@ -55,6 +55,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentUpdateStep = 0;
     const regUserData = {};
     const updateUserData = {};
+    let fullPlanData = {};
+    let currentWeekIndex = 0;
+
 
     // --- Fragen in Schritten gruppiert (ÜBERARBEITET) ---
     const registrationSteps = [
@@ -96,7 +99,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 { id: 'frequency', label: 'Wie oft möchtest du im Fitnessstudio trainieren?', type: 'select_with_ai', options: ['1-2 mal', '3-4 mal', '5-6 mal'] },
             ]
         },
-        // NEUER SCHRITT
         {
             title: "Wähle deinen Trainingszeitraum",
             questions: [
@@ -128,7 +130,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     case 'select_with_ai': inputHtml = `<div class="flex flex-col sm:flex-row items-center gap-4"><select id="${questionId}" class="input-field w-full" required>${q.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}</select><button type="button" class="ai-recommend-btn btn-primary bg-indigo-600 hover:bg-indigo-500 w-full sm:w-auto whitespace-nowrap px-4 py-3">KI-Empfehlung</button></div>`; break;
                     case 'multiselect_days': inputHtml = `<div id="${questionId}" class="grid grid-cols-2 sm:grid-cols-4 gap-3">${daysOfWeek.map(day => `<div><input type="checkbox" id="day-${day}${idPrefix}" name="sportDays${idPrefix}" value="${day}" class="hidden day-checkbox"><label for="day-${day}${idPrefix}" class="day-checkbox-label">${day}</label></div>`).join('')}</div>`; break;
                     case 'checkbox': inputHtml = `<div class="checkbox-container"><input id="${questionId}" type="checkbox" class="custom-checkbox"><label for="${questionId}" class="custom-checkbox-label">${q.label}</label></div>`; break;
-                    // NEU: Kalender-Container
                     case 'calendar': inputHtml = `<div id="calendar-wrapper${idPrefix}" class="calendar-container"></div><p id="selection-info${idPrefix}" class="selection-info-text">Wähle einen Starttag.</p>`; break;
                     default: inputHtml = `<input type="${q.type}" id="${questionId}" class="input-field" placeholder="${q.placeholder || ''}" required>`;
                 }
@@ -292,72 +293,50 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // NEU: Dashboard-Anzeige komplett überarbeitet
-    const displayResults = (userData) => {
-        planResultContainer.innerHTML = '';
-        if (!userData.plan || !userData.plan.weeklyPlans) {
-            planResultContainer.innerHTML = '<p>Kein Plan gefunden oder Plan wird noch erstellt.</p>';
-            return;
-        }
+    const renderWeek = (weekIndex) => {
+        const sortedWeeks = Object.keys(fullPlanData.weeklyPlans).sort();
+        const weekKey = sortedWeeks[weekIndex];
+        const weekData = fullPlanData.weeklyPlans[weekKey];
 
-        const weeklyPlans = userData.plan.weeklyPlans;
-        const sortedWeeks = Object.keys(weeklyPlans).sort();
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const weekStartDate = new Date(weekKey);
+        const weekEndDate = new Date(weekStartDate);
+        weekEndDate.setDate(weekEndDate.getDate() + 6);
 
-        sortedWeeks.forEach((weekStartDateStr, index) => {
-            const weekStartDate = new Date(weekStartDateStr);
-            const weekEndDate = new Date(weekStartDate);
-            weekEndDate.setDate(weekEndDate.getDate() + 6);
+        const formatDate = (date) => `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth() + 1).toString().padStart(2, '0')}`;
 
-            const isCurrentWeek = today >= weekStartDate && today <= weekEndDate;
-            const weekData = weeklyPlans[weekStartDateStr];
-
-            const weekSection = document.createElement('div');
-            weekSection.className = 'week-plan-section';
-            if (isCurrentWeek) {
-                weekSection.classList.add('open');
-            }
-
-            const formatDate = (date) => `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-            
-            let headerHTML = `
-                <div class="week-header">
-                    <div class="flex items-center">
-                        <h3>Trainingswoche ${index + 1}</h3>
-                        ${isCurrentWeek ? '<span class="current-week-badge">Aktuell</span>' : ''}
-                    </div>
-                    <div class="flex items-center">
-                         <span class="date-range">${formatDate(weekStartDate)} - ${formatDate(weekEndDate)}</span>
-                         <button class="toggle-plan-btn ml-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
-                         </button>
-                    </div>
+        let navigatorHTML = `
+            <div class="week-navigator">
+                <button id="prevWeekBtn" class="week-nav-btn" ${weekIndex === 0 ? 'disabled' : ''}>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg>
+                </button>
+                <div class="week-info">
+                    <h3>Trainingswoche ${weekIndex + 1}</h3>
+                    <p class="date-range">${formatDate(weekStartDate)} - ${formatDate(weekEndDate)}</p>
                 </div>
-                <div class="plan-grid-wrapper">
-                    <div class="plan-grid">
-            `;
+                <button id="nextWeekBtn" class="week-nav-btn" ${weekIndex === sortedWeeks.length - 1 ? 'disabled' : ''}>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+                </button>
+            </div>
+        `;
 
-            weekData.weeklyPlan.forEach((dayPlan) => {
-                const isWorkout = dayPlan.workoutTitle.toLowerCase() !== 'ruhetag';
-                const cellClass = isWorkout ? 'workout' : 'rest';
-                headerHTML += `
-                    <div class="day-cell ${cellClass}" data-title="${dayPlan.day}: ${dayPlan.workoutTitle}" data-details="${isWorkout ? dayPlan.workoutDetails : ''}">
-                        <div>
-                            <p class="day-name">${dayPlan.day}</p>
-                            <p class="workout-title">${dayPlan.workoutTitle}</p>
-                        </div>
-                        ${isWorkout ? '<p class="view-details">Details &rarr;</p>' : ''}
+        let gridHTML = '<div class="plan-grid">';
+        weekData.weeklyPlan.forEach((dayPlan) => {
+            const isWorkout = dayPlan.workoutTitle.toLowerCase() !== 'ruhetag';
+            const cellClass = isWorkout ? 'workout' : 'rest';
+            gridHTML += `
+                <div class="day-cell ${cellClass}" data-title="${dayPlan.day}: ${dayPlan.workoutTitle}" data-details="${isWorkout ? dayPlan.workoutDetails : ''}">
+                    <div>
+                        <p class="day-name">${dayPlan.day}</p>
+                        <p class="workout-title">${dayPlan.workoutTitle}</p>
                     </div>
-                `;
-            });
-
-            headerHTML += '</div></div>';
-            weekSection.innerHTML = headerHTML;
-            planResultContainer.appendChild(weekSection);
+                    ${isWorkout ? '<p class="view-details">Details &rarr;</p>' : ''}
+                </div>
+            `;
         });
-    };
+        gridHTML += '</div>';
 
+        planResultContainer.innerHTML = navigatorHTML + gridHTML;
+    };
 
     const openModal = (title, details) => {
         modalTitle.textContent = title;
@@ -376,10 +355,30 @@ document.addEventListener('DOMContentLoaded', () => {
                     const userData = doc.data();
                     usernameDisplay.textContent = userData.profile.username || user.email;
 
-                    if (userData.plan && Object.keys(userData.plan.weeklyPlans).length > 0) {
-                        displayResults(userData);
+                    if (userData.plan && userData.plan.weeklyPlans && Object.keys(userData.plan.weeklyPlans).length > 0) {
+                        fullPlanData = userData.plan;
+                        const sortedWeeks = Object.keys(fullPlanData.weeklyPlans).sort();
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+
+                        let foundCurrentWeek = false;
+                        for(let i = 0; i < sortedWeeks.length; i++) {
+                            const weekStartDate = new Date(sortedWeeks[i]);
+                            const weekEndDate = new Date(weekStartDate);
+                            weekEndDate.setDate(weekEndDate.getDate() + 6);
+                            if (today >= weekStartDate && today <= weekEndDate) {
+                                currentWeekIndex = i;
+                                foundCurrentWeek = true;
+                                break;
+                            }
+                        }
+                        if (!foundCurrentWeek) {
+                            currentWeekIndex = 0;
+                        }
+                        
+                        renderWeek(currentWeekIndex);
                         showPage('dashboard');
-                    } else if (userData.profile) {
+                    } else if (userData.profile && userData.plan && userData.plan.startDate) {
                         showPage('dashboard');
                         planResultContainer.innerHTML = `<div class="col-span-full flex flex-col items-center justify-center p-8"><div class="loader mb-4"></div><p class="text-lg font-semibold">Dein persönlicher Plan wird generiert...</p><p class="text-gray-400">Das kann bis zu 30 Sekunden dauern.</p></div>`;
                         const idToken = await user.getIdToken(true);
@@ -496,16 +495,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     cancelUpdateBtn.addEventListener('click', () => showPage('dashboard'));
     
-    // NEU: Event-Delegation für Dashboard-Interaktionen
     planResultContainer.addEventListener('click', (e) => {
         const dayCell = e.target.closest('.day-cell.workout');
-        const weekHeader = e.target.closest('.week-header');
+        const prevBtn = e.target.closest('#prevWeekBtn');
+        const nextBtn = e.target.closest('#nextWeekBtn');
 
         if (dayCell && dayCell.dataset.details) {
             openModal(dayCell.dataset.title, dayCell.dataset.details);
         }
-        if (weekHeader) {
-            weekHeader.parentElement.classList.toggle('open');
+        if (prevBtn) {
+            if (currentWeekIndex > 0) {
+                currentWeekIndex--;
+                renderWeek(currentWeekIndex);
+            }
+        }
+        if (nextBtn) {
+            const sortedWeeks = Object.keys(fullPlanData.weeklyPlans).sort();
+            if (currentWeekIndex < sortedWeeks.length - 1) {
+                currentWeekIndex++;
+                renderWeek(currentWeekIndex);
+            }
         }
     });
     
@@ -548,14 +557,12 @@ document.addEventListener('DOMContentLoaded', () => {
     buildFormSteps(updatePlanSteps, updateFormStepsContainer, '_update');
     renderStep(currentUpdateStep, updateFormStepsContainer);
     
-    // NEU: Kalender-Initialisierung
     initCalendar('calendar-wrapper', regUserData, '');
     initCalendar('calendar-wrapper_update', updateUserData, '_update');
 
     showPage('authLoading');
 });
 
-// NEU: Komplette Kalender-Logik
 function initCalendar(containerId, dataObject, idPrefix) {
     const calendarWrapper = document.getElementById(containerId);
     if (!calendarWrapper) return;
