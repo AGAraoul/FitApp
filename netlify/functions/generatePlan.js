@@ -6,35 +6,56 @@ const admin = require('firebase-admin');
 
 const db = () => admin.firestore();
 
-// --- PROMPT-ERSTELLUNG (AKTUALISIERT) ---
+// --- PROMPT-ERSTELLUNG (ÜBERARBEITET) ---
 const createPrompt = (userProfile) => {
-    // GEÄNDERT: Die Anforderung zur Kalorienberechnung wurde entfernt.
+    // NEU: Dynamische Bestimmung der Experten-Persona basierend auf der Sportart
+    let expertPersona = `einem weltklasse Experten für ${userProfile.sport}`;
+    const sportLowerCase = userProfile.sport.toLowerCase();
+
+    if (sportLowerCase.includes('fußball') || sportLowerCase.includes('soccer')) {
+        expertPersona = "einem High-End Athletik- und Fitnesstrainer für Profifußballer";
+    } else if (sportLowerCase.includes('bodybuilding')) {
+        expertPersona = "einem professionellen Bodybuilding-Coach mit Wettkampferfahrung";
+    } else if (sportLowerCase.includes('laufen') || sportLowerCase.includes('running')) {
+        expertPersona = "einem erfahrenen Lauftrainer, der Athleten auf Marathons vorbereitet";
+    } else if (sportLowerCase.includes('basketball')) {
+        expertPersona = "einem auf Sprungkraft und Agilität spezialisierten Basketball-Performance-Coach";
+    }
+
     return `
-        Erstelle einen detaillierten, personalisierten Trainingsplan mit genauer Rücksicht auf die angegebenen Daten des Nutzers.
-        Die Ausgabe MUSS ein valides JSON-Objekt sein, das genau dieser Struktur folgt: {"weeklyPlan": [...]}.
-        "weeklyPlan" MUSS ein Array mit genau 7 Objekten sein, eines für jeden Tag von Montag bis Sonntag.
-        Jedes Tagesobjekt MUSS diese Struktur haben: {"day": "TAG_NAME", "workoutTitle": "TITEL", "workoutDetails": "HTML_DETAILS"}.
-        
-        **Benutzerdaten:**
+        **DEINE ROLLE:** Du bist ein weltklasse Personal Trainer und agierst als ${expertPersona}. Deine Aufgabe ist es, einen hochgradig personalisierten, effektiven und sicheren Trainingsplan zu erstellen, der exakt auf die Bedürfnisse des Nutzers zugeschnitten ist.
+
+        **AUFGABE:** Erstelle einen detaillierten, 7-tägigen Trainingsplan. Berücksichtige dabei JEDES Detail aus den Nutzerdaten, um den Plan optimal anzupassen.
+
+        **AUSGABEFORMAT (KRITISCH):**
+        Die Ausgabe MUSS ein valides JSON-Objekt sein, das exakt dieser Struktur folgt: {"weeklyPlan": [...]}.
+        - "weeklyPlan" MUSS ein Array mit genau 7 Objekten sein (Montag bis Sonntag).
+        - Jedes Tagesobjekt MUSS die Struktur haben: {"day": "TAG_NAME", "workoutTitle": "TITEL", "workoutDetails": "HTML_DETAILS"}.
+        - Die "workoutDetails" MÜSSEN als formatierter HTML-String (z.B. mit <ul>, <li>, <strong>) bereitgestellt werden und detaillierte Übungsanweisungen, Satz- und Wiederholungszahlen enthalten.
+
+        **NUTZERDATEN ZUR ANALYSE:**
         - Geschlecht: ${userProfile.gender}
         - Alter: ${userProfile.age} Jahre
         - Größe: ${userProfile.height} cm
         - Gewicht: ${userProfile.weight} kg
-        - Ziel: ${userProfile.goal}
+        - Hauptziel: ${userProfile.goal} (z.B. Abnehmen, Muskelaufbau)
         - Hauptsportart: ${userProfile.sport}
-        - Bestehende Trainingstage: ${userProfile.sportDays}
+        - Feste Trainingstage für Hauptsportart: ${userProfile.sportDays}
         - Fitnessniveau: ${userProfile.fitnessLevel}
         - Gewünschte zusätzliche Trainingseinheiten: ${userProfile.frequency}
 
-        **KRITISCHE ANWEISUNGEN:**
-        1.  **Feste Termine:** Die Tage unter "Bestehende Trainingstage" sind FIXE Termine. Trage diese exakt an den angegebenen Tagen in den Plan ein.
-        2.  **KI-Häufigkeit:** Wenn "Gewünschte zusätzliche Trainingseinheiten" "KI-Empfehlung" ist, bestimme DU die optimale Anzahl.
-        3.  **Intelligente Platzierung:** Plane die zusätzlichen Workouts und Ruhetage intelligent UM die festen Termine herum.
-        4.  **Anpassung an Niveau:** Passe die Komplexität der Übungen an das Fitnessniveau an.
+        **KRITISCHE ANWEISUNGEN FÜR DEN PLAN:**
+        1.  **Spezialisierung:** Der Plan MUSS absolut spezifisch für die Hauptsportart "${userProfile.sport}" sein. Die Übungen sollen die Leistung in dieser Sportart direkt verbessern (z.B. Sprungkraft für Basketball, Rumpfstabilität für Fußball, Maximalkraft für Bodybuilding).
+        2.  **Persona übernehmen:** Formuliere die Titel und Details so, wie es ${expertPersona} tun würde – professionell, motivierend und fachkundig.
+        3.  **Integration fester Termine:** Die Tage unter "Feste Trainingstage" sind FIX. Plane die zusätzlichen Workouts und Ruhetage intelligent UM diese Termine herum, um Übertraining zu vermeiden und die Regeneration zu maximieren.
+        4.  **Anpassung an Niveau & Ziel:** Passe die Komplexität der Übungen, das Volumen und die Intensität exakt an das Fitnessniveau "${userProfile.fitnessLevel}" und das Hauptziel "${userProfile.goal}" an.
+        5.  **KI-Frequenz:** Wenn "Gewünschte zusätzliche Trainingseinheiten" "KI-Empfehlung" ist, bestimme DU die optimale Anzahl basierend auf allen anderen Daten.
+        6.  **HTML-Formatierung:** Achte auf sauberes und lesbares HTML in den \`workoutDetails\`.
 
-        Gib NUR das JSON-Objekt zurück, ohne zusätzlichen Text oder Markdown.
+        Gib NUR das JSON-Objekt zurück, ohne jeglichen zusätzlichen Text oder Markdown-Formatierung.
     `;
 };
+
 
 // --- NETLIFY FUNCTION HANDLER (VERBESSERT) ---
 exports.handler = async (event, context) => {
@@ -81,7 +102,7 @@ exports.handler = async (event, context) => {
 
         // 3. Plan mit Gemini API generieren
         const prompt = createPrompt(userProfile);
-        // KORREKTUR: Der Tippfehler in der Variable wurde behoben (geminiApikey -> geminiApiKey).
+        // KORREKTUR: Der Modellname wurde von 'gemini-flash-1.5' zu 'gemini-1.5-flash' korrigiert.
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
         const payload = {
             contents: [{ role: "user", parts: [{ text: prompt }] }],
