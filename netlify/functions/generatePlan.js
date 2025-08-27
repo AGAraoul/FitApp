@@ -112,13 +112,12 @@ exports.handler = async (event, context) => {
         // Den gesamten Zeitraum in logische Wochenabschnitte unterteilen
         while (currentStartDate <= endDate) {
             const weekStartDate = new Date(currentStartDate);
-            // getDay() ist 0 für Sonntag. Wir rechnen um, sodass Montag = 0 und Sonntag = 6 ist.
-            const dayOfWeek = (weekStartDate.getDay() + 6) % 7; 
+            // getDay() ist 0 für Sonntag. Wir rechnen um, sodass Montag = 1 und Sonntag = 7 ist.
+            const dayOfWeek = weekStartDate.getDay() === 0 ? 7 : weekStartDate.getDay();
             
-            // Das Enddatum des aktuellen Abschnitts berechnen.
-            // Es ist entweder das Ende der Woche (Sonntag) oder das Enddatum des Plans.
             let weekEndDate = new Date(weekStartDate);
-            weekEndDate.setDate(weekStartDate.getDate() + (6 - dayOfWeek)); 
+            // Das Enddatum ist immer der nächste Sonntag (Tag 7)
+            weekEndDate.setDate(weekStartDate.getDate() + (7 - dayOfWeek)); 
             
             if (weekEndDate > endDate) {
                 weekEndDate = new Date(endDate);
@@ -126,7 +125,7 @@ exports.handler = async (event, context) => {
 
             weekSegments.push({ start: weekStartDate, end: weekEndDate });
 
-            // Das Startdatum für den nächsten Abschnitt auf den Tag nach dem Ende des aktuellen setzen.
+            // Das Startdatum für den nächsten Abschnitt auf den Montag nach dem Ende des aktuellen setzen.
             currentStartDate = new Date(weekEndDate);
             currentStartDate.setDate(currentStartDate.getDate() + 1);
         }
