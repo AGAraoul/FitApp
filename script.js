@@ -87,7 +87,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 { id: 'noSpecificSport', label: 'Ich möchte an meiner allgemeinen Fitness arbeiten.', type: 'checkbox' },
                 { id: 'sport', label: 'Für welche Hauptsportart möchtest du einen Plan?', type: 'text', placeholder: 'z.B. Bodybuilding, Fußball' },
                 { id: 'sportDays', label: 'An welchen Tagen trainierst du diese Sportart bereits?', type: 'multiselect_days' },
-                { id: 'fitnessLevel', label: 'Auf welchem Fitnessniveau befindest du dich?', type: 'select', options: ['Anfänger', 'Fortgeschritten', 'Fit', 'Top Fit'] },
+                // KORREKTUR: Fitnesslevel-Optionen aktualisiert
+                { id: 'fitnessLevel', label: 'Auf welchem Fitnessniveau befindest du dich?', type: 'select', options: ['Anfänger - Niedrige Körperliche Fitness', 'Fortgeschritten - Durchschnittliche Fitness', 'Sportlich - Überdurchschnittliche Fitness', 'Extrem Sportlich - Herausragende Fitness'] },
             ]
         },
         {
@@ -125,10 +126,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     default: inputHtml = `<input type="${q.type}" id="${questionId}" class="input-field" placeholder="${q.placeholder || ''}" required>`;
                 }
                 
-                // KORREKTUR: Logik zur Vermeidung doppelter Labels
                 let questionWrapper = '';
                 if (q.type === 'checkbox') {
-                    questionWrapper = inputHtml; // Checkbox hat bereits ein Label
+                    questionWrapper = inputHtml; 
                 } else if (q.id === 'sport' || q.id === 'sportDays') {
                     questionWrapper = `<div data-dependency="noSpecificSport${idPrefix}"><label for="${questionId}" class="block mb-2 text-sm font-medium text-gray-300">${q.label}</label>${inputHtml}</div>`;
                 } else {
@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (q.id === 'passwordConfirm' || q.id === 'noSpecificSport') return;
 
             if (isGeneralFitness && (q.id === 'sport' || q.id === 'sportDays')) {
-                return; // Überspringe das Speichern dieser Felder
+                return; 
             }
 
             const questionId = `${q.id}${idPrefix}`;
@@ -258,7 +258,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // KORREKTUR: Stellt sicher, dass nach dem Logout immer die Login-Seite angezeigt wird.
     const handleLogout = () => {
         auth.signOut().then(() => {
             showPage('login');
@@ -273,7 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const cellClass = isWorkout ? 'workout' : 'rest';
                 const dayElement = document.createElement('div');
                 dayElement.className = `day-cell ${cellClass}`;
-                dayElement.style.animationDelay = `${index * 100}ms`; // Animation
+                dayElement.style.animationDelay = `${index * 100}ms`; 
                 dayElement.innerHTML = `
                     <div>
                         <p class="day-name">${dayPlan.day}</p>
@@ -330,10 +329,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // VERBESSERTE ANIMATION
     startRegistrationProcessBtn.addEventListener('click', () => {
         const card = registrationStartView.closest('.card');
-        card.style.minHeight = card.offsetHeight + 'px'; // Höhe fixieren, um Springen zu verhindern
+        card.style.minHeight = card.offsetHeight + 'px'; 
 
         registrationStartView.classList.add('fade-out-left');
         
@@ -341,7 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
             registrationStartView.style.display = 'none';
             registrationFormWrapper.style.display = 'block';
             registrationFormWrapper.classList.add('fade-in-right');
-            card.style.minHeight = ''; // Höhe wieder freigeben
+            card.style.minHeight = ''; 
         }, 400);
 
         currentRegStep = 0;
@@ -363,7 +361,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // VERBESSERTE ANIMATION
     prevBtn.addEventListener('click', () => {
         if (currentRegStep > 0) {
             currentRegStep--;
