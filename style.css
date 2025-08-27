@@ -22,6 +22,7 @@ body {
     border: 1px solid #374151;
     border-radius: 1rem; /* Abgerundete Ecken */
     transition: all 0.3s ease-in-out;
+    width: 100%; /* Stellt sicher, dass die Karte die Breite des max-width Containers ausfüllt */
 }
 .btn-primary {
     background-color: #3B82F6; /* Blauer Akzent */
@@ -96,6 +97,9 @@ body {
     color: #9CA3AF; /* gray-400 */
     margin-top: 0.5rem;
     max-width: 400px;
+    /* HINZUGEFÜGT: Zentriert den Text-Block selbst */
+    margin-left: auto;
+    margin-right: auto;
 }
 
 
@@ -342,9 +346,4 @@ body {
     .app-tagline {
         font-size: 1rem; /* 16px */
     }
-    /* GEÄNDERT: Die spezielle Ausrichtung für Mobilgeräte wurde entfernt, um eine konsistente Zentrierung zu gewährleisten. */
-    /* .auth-container {
-        justify-content: flex-start;
-        padding-top: 3rem;
-    } */
 }
