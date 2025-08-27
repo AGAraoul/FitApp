@@ -66,7 +66,7 @@ exports.handler = async (event, context) => {
         if (!apiKey) throw new Error('GEMINI_API_KEY ist nicht konfiguriert.');
         
         const prompt = createPrompt(userProfile);
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-1.5:generateContent?key=${apiKey}`;
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
         const payload = {
             contents: [{ role: "user", parts: [{ text: prompt }] }],
             generationConfig: { responseMimeType: "application/json" }
