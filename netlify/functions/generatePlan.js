@@ -3,7 +3,8 @@ const admin = require('firebase-admin');
 
 const db = () => admin.firestore();
 
-const createPrompt = (userProfile, weekNumber, totalWeeks) => {
+// --- PROMPT-ERSTELLUNG (PERFEKTIONIERT) ---
+const createPrompt = (userProfile, weekNumber, totalWeeks, startDayName) => {
     let expertPersona;
     const sportLowerCase = userProfile.sport.toLowerCase();
 
@@ -21,7 +22,6 @@ const createPrompt = (userProfile, weekNumber, totalWeeks) => {
         ? 'Der Plan MUSS auf allgemeine Fitness ausgerichtet sein und eine ausgewogene Mischung aus Krafttraining, Cardio und Flexibilität für den ganzen Körper bieten, um das Hauptziel des Nutzers zu erreichen.'
         : `Der Plan MUSS absolut spezifisch für die Hauptsportart "${userProfile.sport}" sein. Die Übungen sollen die Leistung in dieser Sportart direkt verbessern.`;
 
-    // NEU: Dynamische Anweisung zur Progression
     let progressionInstruction = '';
     if (totalWeeks > 1) {
         progressionInstruction = `
@@ -37,7 +37,8 @@ const createPrompt = (userProfile, weekNumber, totalWeeks) => {
 
         **AUSGABEFORMAT (KRITISCH):**
         Die Ausgabe MUSS ein valides JSON-Objekt sein, das exakt dieser Struktur folgt: {"weeklyPlan": [...]}.
-        - "weeklyPlan" MUSS ein Array mit genau 7 Objekten sein (Montag bis Sonntag).
+        - "weeklyPlan" MUSS ein Array mit genau 7 Objekten sein.
+        - **Der 7-Tage-Zyklus MUSS mit einem ${startDayName} beginnen und die Tage entsprechend korrekt benennen.**
         - Jedes Tagesobjekt MUSS die Struktur haben: {"day": "TAG_NAME", "workoutTitle": "TITEL", "workoutDetails": "HTML_DETAILS"}.
         - Die "workoutDetails" MÜSSEN als formatierter HTML-String (z.B. mit <ul>, <li>, <strong>) bereitgestellt werden.
 
@@ -104,17 +105,20 @@ exports.handler = async (event, context) => {
         const startDate = new Date(planInfo.startDate);
         const endDate = new Date(planInfo.endDate);
         
-        // Berechne die Anzahl der Wochen
         const totalDays = (endDate - startDate) / (1000 * 60 * 60 * 24) + 1;
         const totalWeeks = Math.ceil(totalDays / 7);
 
         const allWeeklyPlans = {};
+        const daysOfWeek = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
 
         for (let i = 0; i < totalWeeks; i++) {
             const weekStartDate = new Date(startDate);
             weekStartDate.setDate(startDate.getDate() + (i * 7));
             
-            const prompt = createPrompt(userProfile, i + 1, totalWeeks);
+            const startDayIndex = weekStartDate.getDay();
+            const startDayName = daysOfWeek[startDayIndex];
+            
+            const prompt = createPrompt(userProfile, i + 1, totalWeeks, startDayName);
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
             const payload = {
                 contents: [{ role: "user", parts: [{ text: prompt }] }],
@@ -130,7 +134,6 @@ exports.handler = async (event, context) => {
             if (!apiResponse.ok) {
                 const errorBody = await apiResponse.text();
                 console.error(`API Fehler in Woche ${i+1}:`, errorBody);
-                // Springe zur nächsten Woche, wenn ein Fehler auftritt
                 continue; 
             }
 
@@ -138,12 +141,10 @@ exports.handler = async (event, context) => {
             if (result.candidates && result.candidates[0] && result.candidates[0].content) {
                 const rawJson = result.candidates[0].content.parts[0].text;
                 const planData = JSON.parse(rawJson);
-                // Speichere den Plan mit dem Startdatum der Woche als Schlüssel
                 allWeeklyPlans[weekStartDate.toISOString().split('T')[0]] = planData;
             }
         }
         
-        // Speichere alle generierten Wochenpläne in einem einzigen Update
         await userDocRef.update({
             'plan.weeklyPlans': allWeeklyPlans
         });
