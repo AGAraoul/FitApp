@@ -301,29 +301,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // GEÄNDERT: Listener für den Start der Registrierung mit Animation
+    // NEU: Listener für den Start der Registrierung
     startRegistrationProcessBtn.addEventListener('click', () => {
-        // Animiere die Startansicht nach links raus
-        registrationStartView.style.transform = 'translateX(-100%)';
-        registrationStartView.style.opacity = '0';
-        
-        // Mache das Formular sichtbar und positioniere es rechts
+        registrationStartView.style.display = 'none';
         registrationFormWrapper.style.display = 'block';
-        registrationFormWrapper.style.transform = 'translateX(100%)';
-        registrationFormWrapper.style.opacity = '0';
-
-        // Kurzer Timeout, damit der Browser die Startposition des Formulars rendern kann
-        setTimeout(() => {
-            // Animiere das Formular von rechts rein
-            registrationFormWrapper.style.transform = 'translateX(0)';
-            registrationFormWrapper.style.opacity = '1';
-        }, 10);
-
-        // Verstecke die Startansicht, nachdem die Animation abgeschlossen ist
-        setTimeout(() => {
-            registrationStartView.style.display = 'none';
-        }, 400); // Dauer der CSS-Transition
-
         currentRegStep = 0;
         renderStep(currentRegStep, formStepsContainer);
         progressBar.style.width = '0%';
@@ -343,8 +324,6 @@ document.addEventListener('DOMContentLoaded', () => {
             handleRegistration();
         }
     });
-
-    // GEÄNDERT: "Zurück"-Button mit Animation zur Startansicht
     prevBtn.addEventListener('click', () => {
         if (currentRegStep > 0) {
             currentRegStep--;
@@ -352,25 +331,9 @@ document.addEventListener('DOMContentLoaded', () => {
             progressBar.style.width = `${(currentRegStep / (registrationSteps.length - 1)) * 100}%`;
             nextBtn.textContent = 'Weiter';
         } else {
-            // Animiere das Formular nach rechts raus
-            registrationFormWrapper.style.transform = 'translateX(100%)';
-            registrationFormWrapper.style.opacity = '0';
-            
-            // Mache die Startansicht sichtbar und positioniere sie links
+            // Wenn auf dem ersten Schritt, zurück zur Startansicht
+            registrationFormWrapper.style.display = 'none';
             registrationStartView.style.display = 'block';
-            registrationStartView.style.transform = 'translateX(-100%)';
-            registrationStartView.style.opacity = '0';
-
-            setTimeout(() => {
-                // Animiere die Startansicht von links rein
-                registrationStartView.style.transform = 'translateX(0)';
-                registrationStartView.style.opacity = '1';
-            }, 10);
-            
-            // Verstecke das Formular nach der Animation
-            setTimeout(() => {
-                registrationFormWrapper.style.display = 'none';
-            }, 400);
         }
     });
 
@@ -406,10 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showPage('registration');
         // Zurücksetzen zur Startansicht, falls der Nutzer vorher im Formular war
         registrationFormWrapper.style.display = 'none';
-        registrationFormWrapper.style.transform = 'translateX(100%)'; // Reset position
         registrationStartView.style.display = 'block';
-        registrationStartView.style.transform = 'translateX(0)'; // Reset position
-        registrationStartView.style.opacity = '1'; // Reset opacity
     });
     newPlanBtn.addEventListener('click', () => {
         currentUpdateStep = 0;
