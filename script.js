@@ -298,9 +298,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const weekKey = sortedWeeks[weekIndex];
         const weekData = fullPlanData.weeklyPlans[weekKey];
 
+        if (!weekData || !weekData.weeklyPlan) {
+            console.error("Keine Plandaten für diese Woche gefunden:", weekKey);
+            planResultContainer.innerHTML = `<div class="text-center p-8"><p class="text-lg">Fehler beim Laden des Wochenplans.</p></div>`;
+            return;
+        }
+
         const weekStartDate = new Date(weekKey);
         const weekEndDate = new Date(weekStartDate);
-        weekEndDate.setDate(weekEndDate.getDate() + 6);
+        // NEUE LOGIK: Enddatum basierend auf der tatsächlichen Länge des Plans berechnen
+        weekEndDate.setDate(weekEndDate.getDate() + (weekData.weeklyPlan.length - 1));
 
         const formatDate = (date) => `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth() + 1).toString().padStart(2, '0')}`;
 
@@ -364,8 +371,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         let foundCurrentWeek = false;
                         for(let i = 0; i < sortedWeeks.length; i++) {
                             const weekStartDate = new Date(sortedWeeks[i]);
+                            const weekData = fullPlanData.weeklyPlans[sortedWeeks[i]];
                             const weekEndDate = new Date(weekStartDate);
-                            weekEndDate.setDate(weekEndDate.getDate() + 6);
+                            if (weekData && weekData.weeklyPlan) {
+                                weekEndDate.setDate(weekEndDate.getDate() + (weekData.weeklyPlan.length - 1));
+                            }
+                            
                             if (today >= weekStartDate && today <= weekEndDate) {
                                 currentWeekIndex = i;
                                 foundCurrentWeek = true;
@@ -373,6 +384,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         }
                         if (!foundCurrentWeek) {
+                             // Wenn heute außerhalb des Plans liegt, die erste Woche anzeigen
                             currentWeekIndex = 0;
                         }
                         

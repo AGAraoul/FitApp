@@ -3,8 +3,8 @@ const admin = require('firebase-admin');
 
 const db = () => admin.firestore();
 
-// --- PROMPT-ERSTELLUNG (PERFEKTIONIERT) ---
-const createPrompt = (userProfile, weekNumber, totalWeeks, startDayName) => {
+// --- PROMPT-ERSTELLUNG (ANGEPASST FÜR DYNAMISCHE TAGE) ---
+const createPrompt = (userProfile, weekNumber, totalWeeks, startDayName, numberOfDays) => {
     let expertPersona;
     const sportLowerCase = userProfile.sport.toLowerCase();
 
@@ -32,13 +32,13 @@ const createPrompt = (userProfile, weekNumber, totalWeeks, startDayName) => {
     return `
         **DEINE ROLLE:** Du bist ${expertPersona}. Deine Aufgabe ist es, einen hochgradig personalisierten, effektiven und sicheren Trainingsplan zu erstellen.
 
-        **AUFGABE:** Erstelle einen detaillierten, 7-tägigen Trainingsplan für eine spezifische Woche innerhalb eines längeren Zeitraums.
+        **AUFGABE:** Erstelle einen detaillierten, ${numberOfDays}-tägigen Trainingsplan für diesen spezifischen Zeitraum.
         ${progressionInstruction}
 
         **AUSGABEFORMAT (KRITISCH):**
         Die Ausgabe MUSS ein valides JSON-Objekt sein, das exakt dieser Struktur folgt: {"weeklyPlan": [...]}.
-        - "weeklyPlan" MUSS ein Array mit genau 7 Objekten sein.
-        - **Der 7-Tage-Zyklus MUSS mit einem ${startDayName} beginnen und die Tage entsprechend korrekt benennen.**
+        - "weeklyPlan" MUSS ein Array mit genau ${numberOfDays} Objekten sein.
+        - **Der ${numberOfDays}-Tage-Zyklus MUSS mit einem ${startDayName} beginnen und die Tage entsprechend korrekt benennen.**
         - Jedes Tagesobjekt MUSS die Struktur haben: {"day": "TAG_NAME", "workoutTitle": "TITEL", "workoutDetails": "HTML_DETAILS"}.
         - Die "workoutDetails" MÜSSEN als formatierter HTML-String (z.B. mit <ul>, <li>, <strong>) bereitgestellt werden.
 
@@ -105,20 +105,46 @@ exports.handler = async (event, context) => {
         const startDate = new Date(planInfo.startDate);
         const endDate = new Date(planInfo.endDate);
         
-        const totalDays = (endDate - startDate) / (1000 * 60 * 60 * 24) + 1;
-        const totalWeeks = Math.ceil(totalDays / 7);
-
         const allWeeklyPlans = {};
+        const weekSegments = [];
+        let currentStartDate = new Date(startDate);
+
+        // Den gesamten Zeitraum in logische Wochenabschnitte unterteilen
+        while (currentStartDate <= endDate) {
+            const weekStartDate = new Date(currentStartDate);
+            // getDay() ist 0 für Sonntag. Wir rechnen um, sodass Montag = 0 und Sonntag = 6 ist.
+            const dayOfWeek = (weekStartDate.getDay() + 6) % 7; 
+            
+            // Das Enddatum des aktuellen Abschnitts berechnen.
+            // Es ist entweder das Ende der Woche (Sonntag) oder das Enddatum des Plans.
+            let weekEndDate = new Date(weekStartDate);
+            weekEndDate.setDate(weekStartDate.getDate() + (6 - dayOfWeek)); 
+            
+            if (weekEndDate > endDate) {
+                weekEndDate = new Date(endDate);
+            }
+
+            weekSegments.push({ start: weekStartDate, end: weekEndDate });
+
+            // Das Startdatum für den nächsten Abschnitt auf den Tag nach dem Ende des aktuellen setzen.
+            currentStartDate = new Date(weekEndDate);
+            currentStartDate.setDate(currentStartDate.getDate() + 1);
+        }
+
+        const totalWeeks = weekSegments.length;
         const daysOfWeek = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
 
         for (let i = 0; i < totalWeeks; i++) {
-            const weekStartDate = new Date(startDate);
-            weekStartDate.setDate(startDate.getDate() + (i * 7));
+            const segment = weekSegments[i];
+            const weekStartDate = segment.start;
             
             const startDayIndex = weekStartDate.getDay();
             const startDayName = daysOfWeek[startDayIndex];
             
-            const prompt = createPrompt(userProfile, i + 1, totalWeeks, startDayName);
+            // Anzahl der Tage in diesem spezifischen Wochenabschnitt berechnen
+            const numberOfDays = Math.round((segment.end - segment.start) / (1000 * 60 * 60 * 24)) + 1;
+
+            const prompt = createPrompt(userProfile, i + 1, totalWeeks, startDayName, numberOfDays);
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
             const payload = {
                 contents: [{ role: "user", parts: [{ text: prompt }] }],
@@ -141,6 +167,7 @@ exports.handler = async (event, context) => {
             if (result.candidates && result.candidates[0] && result.candidates[0].content) {
                 const rawJson = result.candidates[0].content.parts[0].text;
                 const planData = JSON.parse(rawJson);
+                // Als Schlüssel das Startdatum des Segments verwenden
                 allWeeklyPlans[weekStartDate.toISOString().split('T')[0]] = planData;
             }
         }
