@@ -170,7 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- Spezifische Anwendungslogik ---
-    const showPage = (pageName) => {
+     const showPage = (pageName) => {
         Object.values(pages).forEach(page => page.style.display = 'none');
         if (pages[pageName]) {
             // ERSETZT: Alte, fehleranfällige Logik
