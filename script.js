@@ -24,7 +24,6 @@ document.addEventListener('DOMContentLoaded', () => {
         dashboard: document.getElementById('dashboardPage'),
         updatePlan: document.getElementById('updatePlanPage'),
     };
-    // NEU: Zusätzliche Elemente für die neue Registrierungslogik
     const registrationStartView = document.getElementById('registrationStartView');
     const registrationFormWrapper = document.getElementById('registrationFormWrapper');
     const startRegistrationProcessBtn = document.getElementById('startRegistrationProcessBtn');
@@ -57,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const regUserData = {};
     const updateUserData = {};
 
-    // --- Fragen in Schritten gruppiert ---
+    // --- Fragen in Schritten gruppiert (ÜBERARBEITET) ---
     const registrationSteps = [
         {
             title: "Erstelle dein Konto",
@@ -85,6 +84,8 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             title: "Deine sportlichen Ziele",
             questions: [
+                // NEU: Checkbox für allgemeine Fitness
+                { id: 'noSpecificSport', label: 'Ich möchte an meiner allgemeinen Fitness arbeiten (kein sportartspezifischer Plan).', type: 'checkbox' },
                 { id: 'sport', label: 'Für welche Hauptsportart möchtest du einen Plan?', type: 'text', placeholder: 'z.B. Bodybuilding, Fußball' },
                 { id: 'sportDays', label: 'An welchen Tagen trainierst du diese Sportart bereits?', type: 'multiselect_days' },
                 { id: 'fitnessLevel', label: 'Auf welchem Fitnessniveau befindest du dich?', type: 'select', options: ['Anfänger', 'Fortgeschritten', 'Fit', 'Top Fit'] },
@@ -121,11 +122,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     case 'select': inputHtml = `<select id="${questionId}" class="input-field" required>${q.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}</select>`; break;
                     case 'select_with_ai': inputHtml = `<div class="flex flex-col sm:flex-row items-center gap-4"><select id="${questionId}" class="input-field w-full" required>${q.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}</select><button type="button" class="ai-recommend-btn btn-primary bg-indigo-600 hover:bg-indigo-500 w-full sm:w-auto whitespace-nowrap px-4 py-3">KI-Empfehlung</button></div>`; break;
                     case 'multiselect_days': inputHtml = `<div id="${questionId}" class="grid grid-cols-2 sm:grid-cols-4 gap-3">${daysOfWeek.map(day => `<div><input type="checkbox" id="day-${day}${idPrefix}" name="sportDays${idPrefix}" value="${day}" class="hidden day-checkbox"><label for="day-${day}${idPrefix}" class="day-checkbox-label">${day}</label></div>`).join('')}</div>`; break;
+                    // NEU: HTML für die Checkbox
+                    case 'checkbox': inputHtml = `<div class="flex items-center"><input id="${questionId}" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 bg-gray-700 border-gray-600"><label for="${questionId}" class="ml-3 block text-sm text-gray-300">${q.label}</label></div>`; break;
                     default: inputHtml = `<input type="${q.type}" id="${questionId}" class="input-field" placeholder="${q.placeholder || ''}" required>`;
                 }
-                stepHtml += `<div><label for="${questionId}" class="block mb-2 text-sm font-medium text-gray-300">${q.label}</label>${inputHtml}</div>`;
+                // NEU: Wrapper für Sportart und Trainingstage, um sie gemeinsam zu steuern
+                if (q.id === 'sport' || q.id === 'sportDays') {
+                     stepHtml += `<div data-dependency="noSpecificSport${idPrefix}">${q.id === 'sport' ? `<label for="${questionId}" class="block mb-2 text-sm font-medium text-gray-300">${q.label}</label>` : ''}${inputHtml}</div>`;
+                } else {
+                     stepHtml += `<div><label for="${questionId}" class="block mb-2 text-sm font-medium text-gray-300">${q.label}</label>${inputHtml}</div>`;
+                }
             });
-            stepElement.innerHTML = stepHtml;
+            stepElement.innerHTML = stepHtml.replace(/<label.*?>.*?<\/label>/, (match, offset) => stepHtml.indexOf(match) === offset ? match : ''); // Remove duplicate labels
             container.appendChild(stepElement);
         });
     };
@@ -157,9 +165,18 @@ document.addEventListener('DOMContentLoaded', () => {
         return true;
     };
 
+    // ÜBERARBEITET: Speichert die Daten unter Berücksichtigung der Checkbox
     const saveStepData = (stepIndex, steps, dataObject, idPrefix = '') => {
+        const noSpecificSportCheckbox = document.getElementById(`noSpecificSport${idPrefix}`);
+        const isGeneralFitness = noSpecificSportCheckbox && noSpecificSportCheckbox.checked;
+
         steps[stepIndex].questions.forEach(q => {
-            if (q.id === 'passwordConfirm') return;
+            if (q.id === 'passwordConfirm' || q.id === 'noSpecificSport') return;
+
+            if (isGeneralFitness && (q.id === 'sport' || q.id === 'sportDays')) {
+                return; // Überspringe das Speichern dieser Felder
+            }
+
             const questionId = `${q.id}${idPrefix}`;
             if (q.type === 'multiselect_days') {
                 const checkedDays = Array.from(document.querySelectorAll(`input[name="sportDays${idPrefix}"]:checked`)).map(cb => cb.value);
@@ -169,6 +186,11 @@ document.addEventListener('DOMContentLoaded', () => {
                  if(element) dataObject[q.id] = element.value;
             }
         });
+        
+        if (isGeneralFitness) {
+            dataObject['sport'] = 'Allgemeine Fitness';
+            dataObject['sportDays'] = 'Keine';
+        }
     };
 
     // --- Spezifische Anwendungslogik ---
@@ -301,17 +323,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // NEU: Listener für den Start der Registrierung
     startRegistrationProcessBtn.addEventListener('click', () => {
-        registrationStartView.style.display = 'none';
+        registrationStartView.style.transform = 'translateX(-100%)';
+        registrationStartView.style.opacity = '0';
         registrationFormWrapper.style.display = 'block';
+        registrationFormWrapper.style.transform = 'translateX(100%)';
+        registrationFormWrapper.style.opacity = '0';
+        setTimeout(() => {
+            registrationFormWrapper.style.transform = 'translateX(0)';
+            registrationFormWrapper.style.opacity = '1';
+        }, 10);
+        setTimeout(() => {
+            registrationStartView.style.display = 'none';
+        }, 400);
         currentRegStep = 0;
         renderStep(currentRegStep, formStepsContainer);
         progressBar.style.width = '0%';
         nextBtn.textContent = 'Weiter';
     });
 
-    // Registrierungs-Navigation (Überarbeitet)
     nextBtn.addEventListener('click', () => {
         if (!validateStep(currentRegStep, registrationSteps)) return;
         saveStepData(currentRegStep, registrationSteps, regUserData);
@@ -324,6 +354,7 @@ document.addEventListener('DOMContentLoaded', () => {
             handleRegistration();
         }
     });
+
     prevBtn.addEventListener('click', () => {
         if (currentRegStep > 0) {
             currentRegStep--;
@@ -331,13 +362,21 @@ document.addEventListener('DOMContentLoaded', () => {
             progressBar.style.width = `${(currentRegStep / (registrationSteps.length - 1)) * 100}%`;
             nextBtn.textContent = 'Weiter';
         } else {
-            // Wenn auf dem ersten Schritt, zurück zur Startansicht
-            registrationFormWrapper.style.display = 'none';
+            registrationFormWrapper.style.transform = 'translateX(100%)';
+            registrationFormWrapper.style.opacity = '0';
             registrationStartView.style.display = 'block';
+            registrationStartView.style.transform = 'translateX(-100%)';
+            registrationStartView.style.opacity = '0';
+            setTimeout(() => {
+                registrationStartView.style.transform = 'translateX(0)';
+                registrationStartView.style.opacity = '1';
+            }, 10);
+            setTimeout(() => {
+                registrationFormWrapper.style.display = 'none';
+            }, 400);
         }
     });
 
-    // Update-Navigation
     updateNextBtn.addEventListener('click', () => {
         if (!validateStep(currentUpdateStep, updatePlanSteps, '_update')) return;
         saveStepData(currentUpdateStep, updatePlanSteps, updateUserData, '_update');
@@ -361,15 +400,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Andere Listener (Überarbeitet)
     loginForm.addEventListener('submit', handleLogin);
     logoutBtn.addEventListener('click', handleLogout);
     showLoginBtn.addEventListener('click', () => showPage('login'));
     showRegisterBtn.addEventListener('click', () => {
         showPage('registration');
-        // Zurücksetzen zur Startansicht, falls der Nutzer vorher im Formular war
         registrationFormWrapper.style.display = 'none';
+        registrationFormWrapper.style.transform = 'translateX(100%)';
         registrationStartView.style.display = 'block';
+        registrationStartView.style.transform = 'translateX(0)';
+        registrationStartView.style.opacity = '1';
     });
     newPlanBtn.addEventListener('click', () => {
         currentUpdateStep = 0;
@@ -385,6 +425,26 @@ document.addEventListener('DOMContentLoaded', () => {
         const clickedDay = e.target.closest('.day-cell.workout');
         if (clickedDay) openModal(clickedDay.dataset.title, clickedDay.dataset.details);
     });
+    
+    // NEU: Event-Delegation für die Checkbox-Logik
+    document.body.addEventListener('change', (e) => {
+        const idPrefix = e.target.id.includes('_update') ? '_update' : '';
+        if (e.target.id === `noSpecificSport${idPrefix}`) {
+            const isChecked = e.target.checked;
+            const sportInput = document.getElementById(`sport${idPrefix}`);
+            const sportDaysContainer = document.getElementById(`sportDays${idPrefix}`);
+            const dependentElements = [sportInput, sportDaysContainer];
+
+            dependentElements.forEach(el => {
+                if (el) {
+                    el.closest('[data-dependency]').classList.toggle('disabled-look', isChecked);
+                    el.querySelectorAll('input, select').forEach(input => input.disabled = isChecked);
+                    if(sportInput) sportInput.required = !isChecked;
+                }
+            });
+        }
+    });
+
     document.body.addEventListener('click', e => {
         if (e.target.classList.contains('ai-recommend-btn')) {
             const selectElement = e.target.previousElementSibling;

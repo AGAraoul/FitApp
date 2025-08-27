@@ -9,10 +9,12 @@ const db = () => admin.firestore();
 // --- PROMPT-ERSTELLUNG (ÜBERARBEITET) ---
 const createPrompt = (userProfile) => {
     // NEU: Dynamische Bestimmung der Experten-Persona basierend auf der Sportart
-    let expertPersona = `einem weltklasse Experten für ${userProfile.sport}`;
+    let expertPersona;
     const sportLowerCase = userProfile.sport.toLowerCase();
 
-    if (sportLowerCase.includes('fußball') || sportLowerCase.includes('soccer')) {
+    if (sportLowerCase.includes('allgemeine fitness')) {
+        expertPersona = "einem zertifizierten Personal Trainer, der auf ganzheitliche Fitness, Kraftaufbau und Wohlbefinden spezialisiert ist";
+    } else if (sportLowerCase.includes('fußball') || sportLowerCase.includes('soccer')) {
         expertPersona = "einem High-End Athletik- und Fitnesstrainer für Profifußballer";
     } else if (sportLowerCase.includes('bodybuilding')) {
         expertPersona = "einem professionellen Bodybuilding-Coach mit Wettkampferfahrung";
@@ -20,7 +22,15 @@ const createPrompt = (userProfile) => {
         expertPersona = "einem erfahrenen Lauftrainer, der Athleten auf Marathons vorbereitet";
     } else if (sportLowerCase.includes('basketball')) {
         expertPersona = "einem auf Sprungkraft und Agilität spezialisierten Basketball-Performance-Coach";
+    } else {
+        expertPersona = `einem weltklasse Experten für ${userProfile.sport}`;
     }
+
+    // NEU: Dynamische Spezialisierungs-Anweisung
+    const specializationInstruction = userProfile.sport === 'Allgemeine Fitness'
+        ? 'Der Plan MUSS auf allgemeine Fitness ausgerichtet sein und eine ausgewogene Mischung aus Krafttraining, Cardio und Flexibilität für den ganzen Körper bieten, um das Hauptziel des Nutzers zu erreichen.'
+        : `Der Plan MUSS absolut spezifisch für die Hauptsportart "${userProfile.sport}" sein. Die Übungen sollen die Leistung in dieser Sportart direkt verbessern (z.B. Sprungkraft für Basketball, Rumpfstabilität für Fußball, Maximalkraft für Bodybuilding).`;
+
 
     return `
         **DEINE ROLLE:** Du bist ein weltklasse Personal Trainer und agierst als ${expertPersona}. Deine Aufgabe ist es, einen hochgradig personalisierten, effektiven und sicheren Trainingsplan zu erstellen, der exakt auf die Bedürfnisse des Nutzers zugeschnitten ist.
@@ -45,7 +55,7 @@ const createPrompt = (userProfile) => {
         - Gewünschte zusätzliche Trainingseinheiten: ${userProfile.frequency}
 
         **KRITISCHE ANWEISUNGEN FÜR DEN PLAN:**
-        1.  **Spezialisierung:** Der Plan MUSS absolut spezifisch für die Hauptsportart "${userProfile.sport}" sein. Die Übungen sollen die Leistung in dieser Sportart direkt verbessern (z.B. Sprungkraft für Basketball, Rumpfstabilität für Fußball, Maximalkraft für Bodybuilding).
+        1.  **Spezialisierung:** ${specializationInstruction}
         2.  **Persona übernehmen:** Formuliere die Titel und Details so, wie es ${expertPersona} tun würde – professionell, motivierend und fachkundig.
         3.  **Integration fester Termine:** Die Tage unter "Feste Trainingstage" sind FIX. Plane die zusätzlichen Workouts und Ruhetage intelligent UM diese Termine herum, um Übertraining zu vermeiden und die Regeneration zu maximieren.
         4.  **Anpassung an Niveau & Ziel:** Passe die Komplexität der Übungen, das Volumen und die Intensität exakt an das Fitnessniveau "${userProfile.fitnessLevel}" und das Hauptziel "${userProfile.goal}" an.
@@ -102,7 +112,6 @@ exports.handler = async (event, context) => {
 
         // 3. Plan mit Gemini API generieren
         const prompt = createPrompt(userProfile);
-        // KORREKTUR: Der Modellname wurde von 'gemini-flash-1.5' zu 'gemini-1.5-flash' korrigiert.
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
         const payload = {
             contents: [{ role: "user", parts: [{ text: prompt }] }],
