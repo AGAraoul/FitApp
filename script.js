@@ -87,7 +87,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 { id: 'noSpecificSport', label: 'Ich möchte an meiner allgemeinen Fitness arbeiten.', type: 'checkbox' },
                 { id: 'sport', label: 'Für welche Hauptsportart möchtest du einen Plan?', type: 'text', placeholder: 'z.B. Bodybuilding, Fußball' },
                 { id: 'sportDays', label: 'An welchen Tagen trainierst du diese Sportart bereits?', type: 'multiselect_days' },
-                // KORREKTUR: Fitnesslevel-Optionen aktualisiert
                 { id: 'fitnessLevel', label: 'Auf welchem Fitnessniveau befindest du dich?', type: 'select', options: ['Anfänger - Niedrige Körperliche Fitness', 'Fortgeschritten - Durchschnittliche Fitness', 'Sportlich - Überdurchschnittliche Fitness', 'Extrem Sportlich - Herausragende Fitness'] },
             ]
         },
@@ -224,6 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // KORRIGIERTE FUNKTION
     const handlePlanUpdate = async () => {
         const user = auth.currentUser;
         if (!user) return alert("Fehler: Nicht angemeldet.");
@@ -234,6 +234,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!doc.exists) throw new Error("Benutzerprofil nicht gefunden.");
 
             const existingProfile = doc.data().profile;
+            
+            // NEUE LOGIK: Wenn der Nutzer im Update-Flow "Allgemeine Fitness" wählt,
+            // werden die alten sportartspezifischen Daten explizit zurückgesetzt,
+            // bevor die neuen Daten zusammengeführt werden.
+            if (updateUserData.sport === 'Allgemeine Fitness') {
+                existingProfile.sport = 'Allgemeine Fitness';
+                existingProfile.sportDays = 'Keine';
+            }
+
             const newProfile = { ...existingProfile, ...updateUserData };
 
             await userDocRef.update({
