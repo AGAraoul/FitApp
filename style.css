@@ -67,12 +67,12 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* --- NEU: Stile für Login/Registrierungs-Container --- */
+/* --- Stile für Login/Registrierungs-Container --- */
 .auth-container {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: center; /* Sorgt für die vertikale Zentrierung */
     padding: 1rem;
     overflow-y: auto;
 }
@@ -140,7 +140,7 @@ body {
     opacity: 0;
 }
 
-/* --- ÜBERARBEITET: Stile für Vollbild-Dashboard & Responsivität --- */
+/* --- Stile für Vollbild-Dashboard & Responsivität --- */
 .dashboard-background {
     width: 100%;
     height: 100%;
@@ -200,7 +200,6 @@ body {
 .plan-grid {
     flex-grow: 1;
     display: grid;
-    /* Responsive Grid-Spalten */
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 1.5rem;
     padding-top: 1.5rem;
@@ -314,7 +313,7 @@ body {
     color: white;
 }
 
-/* --- NEU: Media Queries für Responsivität --- */
+/* --- Media Queries für Responsivität --- */
 
 /* Tablets und kleine Desktops */
 @media (max-width: 1024px) {
@@ -335,7 +334,6 @@ body {
         justify-content: space-between;
     }
     .plan-grid {
-        /* Stellt sicher, dass auf sehr kleinen Bildschirmen die Kacheln groß genug sind */
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     }
     .app-title {
@@ -344,8 +342,9 @@ body {
     .app-tagline {
         font-size: 1rem; /* 16px */
     }
-    .auth-container {
+    /* GEÄNDERT: Die spezielle Ausrichtung für Mobilgeräte wurde entfernt, um eine konsistente Zentrierung zu gewährleisten. */
+    /* .auth-container {
         justify-content: flex-start;
         padding-top: 3rem;
-    }
+    } */
 }
